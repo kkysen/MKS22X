@@ -103,7 +103,7 @@ public class Queen {
     }
     
     public ChessBitBoard board() {
-        final ChessBitBoard board = new ChessBitBoard(n);
+        final ChessBitBoard board = new LongChessBitBoard(n);
         for (Queen queen = this; queen.parent != null; queen = queen.parent) {
             board.set(queen.i, queen.j);
         }

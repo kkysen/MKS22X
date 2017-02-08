@@ -4,12 +4,12 @@
  * 
  * @author Khyber Sen
  */
-public class ChessBitBoard {
+public abstract class ChessBitBoard implements Cloneable {
     
-    private static long numClones = 0;
-    private static long numSets = 0;
-    private static long numGets = 0;
-    private static long numAdds = 0;
+    protected static long numClones = 0;
+    protected static long numSets = 0;
+    protected static long numGets = 0;
+    protected static long numAdds = 0;
     
     public static String stats() {
         return "numClones = " + numClones
@@ -18,38 +18,29 @@ public class ChessBitBoard {
                 + "\nnumAdds   = " + numAdds;
     }
     
-    private final int n;
-    private final long[] rows;
+    protected final int n;
     
-    public ChessBitBoard(final int n) {
+    protected ChessBitBoard(final int n) {
         this.n = n;
-        rows = new long[n];
     }
     
-    private ChessBitBoard(final long[] rows) {
-        this(rows.length);
-        System.arraycopy(rows, 0, this.rows, 0, n);
-        numClones++;
-    }
+    @Override
+    public abstract ChessBitBoard clone();
     
-    public void set(final int i, final int j) {
-        numSets++;
-        rows[i] |= 1L << j;
-    }
+    public abstract void set(final int i, final int j);
     
-    public boolean get(final int i, final int j) {
-        numGets++;
-        final long col = 1L << j;
-        return (rows[i] & col) == col;
-    }
+    public abstract boolean get(final int i, final int j);
     
     public boolean isValidMove(final int i, final int j) {
         return !get(i, j);
     }
     
+    protected abstract void addQueenColumn(int j);
+    
     public ChessBitBoard addQueen(final Queen queen) {
         numAdds++;
-        final ChessBitBoard newBoard = new ChessBitBoard(rows);
+        final ChessBitBoard newBoard = clone();
+        newBoard.addQueenColumn(queen.j);
         for (int i = queen.i, j = queen.j; j >= 0 && i < n; j--, i++) {
             newBoard.set(i, j);
         }
@@ -75,7 +66,7 @@ public class ChessBitBoard {
     public static void main(final String[] args) {
         final int n = 4;
         final Queen root = Queen.root(n);
-        final ChessBitBoard board1 = new ChessBitBoard(n);
+        final ChessBitBoard board1 = new LongChessBitBoard(n);
         final Queen queen1 = root.newChild(0, 0);
         final ChessBitBoard board2 = board1.addQueen(queen1);
         final Queen queen2 = queen1.newChild(1, 2);
