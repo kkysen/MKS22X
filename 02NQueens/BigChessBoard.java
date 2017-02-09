@@ -1,53 +1,49 @@
 
 /**
- * 
+ * unfinished, but supposed to support ChessBoards of size n > 64 where longs
+ * cannot be used to a single row
  * 
  * @author Khyber Sen
  */
-public class BigChessBitBoard extends ChessBitBoard {
+@Deprecated
+public class BigChessBoard extends ChessBoard {
     
-    /**
-     * @param n
-     */
-    protected BigChessBitBoard(final int n) {
+    public BigChessBoard(final int n) {
         super(n);
         // TODO Auto-generated constructor stub
     }
     
-    /**
-     * @see ChessBitBoard#clone()
-     */
     @Override
-    public ChessBitBoard clone() {
+    public ChessBoard clone() {
         // TODO Auto-generated method stub
         return null;
     }
     
-    /**
-     * @see ChessBitBoard#set(int, int)
-     */
     @Override
     public void set(final int i, final int j) {
         // TODO Auto-generated method stub
         
     }
     
-    /**
-     * @see ChessBitBoard#get(int, int)
-     */
     @Override
     public boolean get(final int i, final int j) {
         // TODO Auto-generated method stub
         return false;
     }
     
-    /**
-     * @see ChessBitBoard#addQueenColumn(int)
-     */
     @Override
     protected void addQueenColumn(final int j) {
         // TODO Auto-generated method stub
         
+    }
+    
+    /**
+     * @see ChessBoard#isRowFull(int)
+     */
+    @Override
+    public boolean isRowFull(final int i) {
+        // TODO Auto-generated method stub
+        return false;
     }
     
 }

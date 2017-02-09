@@ -23,6 +23,13 @@ public class Queen {
         this.j = j;
     }
     
+    public Queen(final int n, final int i, final int j) {
+        this.n = n;
+        this.i = i;
+        this.j = j;
+        parent = null;
+    }
+    
     public static Queen root(final int n) {
         return new Queen(n, null, -1, -1);
     }
@@ -50,8 +57,26 @@ public class Queen {
         return child;
     }
     
+    public boolean isValidMove(final int i, final int j) {
+        if (parent == null) { // is root Queen
+            return true;
+        }
+        for (Queen queen = this; queen.parent != null; queen = queen.parent) {
+            final int dy = i - queen.i;
+            final int dx = Math.abs(j - queen.j);
+            if (dx == dy) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     public void remove(final Queen queen) {
         children.remove(queen);
+    }
+    
+    public void clear() {
+        children.clear();
     }
     
     public void delete() {
@@ -102,8 +127,8 @@ public class Queen {
         return sb.toString();
     }
     
-    public ChessBitBoard board() {
-        final ChessBitBoard board = new LongChessBitBoard(n);
+    public ChessBoard board() {
+        final ChessBoard board = new LongChessBoard(n);
         for (Queen queen = this; queen.parent != null; queen = queen.parent) {
             board.set(queen.i, queen.j);
         }
