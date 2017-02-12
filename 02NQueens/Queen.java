@@ -13,7 +13,7 @@ public class Queen {
     public final int i;
     public final int j;
     
-    private final Queen parent;
+    public final Queen parent;
     private final List<Queen> children = new ArrayList<>();
     
     public Queen(final int n, final Queen parent, final int i, final int j) {

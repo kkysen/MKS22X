@@ -6,13 +6,6 @@
  */
 public class LongChessBoard extends ChessBoard {
     
-    private static long[] COL_MASKS = new long[64];
-    static {
-        for (int i = 0; i < 64; i++) {
-            COL_MASKS[i] = -1L >>> 64 - i;
-        }
-    }
-    
     private long cols;
     private final long[] rows;
     private final long fullMask;
@@ -21,7 +14,7 @@ public class LongChessBoard extends ChessBoard {
         super(n);
         cols = 0L;
         rows = new long[n];
-        fullMask = COL_MASKS[n];
+        fullMask = -1L >>> Long.SIZE - n;
     }
     
     private LongChessBoard(final LongChessBoard other) {
@@ -46,7 +39,7 @@ public class LongChessBoard extends ChessBoard {
     
     @Override
     public boolean isRowFull(final int i) {
-        return rows[i] == fullMask;
+        return (rows[i] | cols) == fullMask;
     }
     
     @Override
@@ -59,6 +52,11 @@ public class LongChessBoard extends ChessBoard {
         numGets++;
         final long col = 1L << j;
         return (cols & col) == col || (rows[i] & col) == col;
+    }
+    
+    @Override
+    public void flip(final int i, final int j) {
+        rows[i] ^= 1L << j;
     }
     
 }

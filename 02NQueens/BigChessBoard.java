@@ -46,4 +46,13 @@ public class BigChessBoard extends ChessBoard {
         return false;
     }
     
+    /**
+     * @see ChessBoard#flip(int, int)
+     */
+    @Override
+    public void flip(final int i, final int j) {
+        // TODO Auto-generated method stub
+        
+    }
+    
 }

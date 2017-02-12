@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +68,85 @@ public class NQueens {
             }
         }
         return !deadend;
+    }
+    
+    //    private long countSolutionsIter2(final int start, ChessBoard board) {
+    //        long solutionCount = 0;
+    //        final int[] jMoves = new int[n];
+    //        final ChessBoard[] boards = new ChessBoard[n];
+    //        int i = start;
+    //        int j = 0;
+    //        for (;;) {
+    //            // exit
+    //            if (i == start - 1) {
+    //                return solutionCount;
+    //            }
+    //            if (i == n) {
+    //                solutionCount++;
+    //            }
+    //            if (board.isRowFull(i) || j == n) {
+    //                // backtrack
+    //                i--;
+    //                j = jMoves[i];
+    //                board = boards[i];
+    //            }
+    //            if (!board.isValidMove(i, j)) {
+    //                continue;
+    //            }
+    //            // add to stack
+    //            jMoves[i] = j;
+    //            boards[i] = board;
+    //            board = board.addQueen(i, j);
+    //            i++;
+    //            j++;
+    //            continue;
+    //        }
+    //    }
+    //
+    //    }
+    
+    @Deprecated
+    private long countSolutionsIter(final int start, ChessBoard board) {
+        int i = start;
+        long solutionCount = 0;
+        final ChessBoard[] boards = new ChessBoard[n];
+        boards[i] = board;
+        Queen parent = root;
+        outer: for (;;) {
+            // a solution
+            if (i == n) {
+                solutionCount++;
+            } else if (!board.isRowFull(i)) {
+                for (int j = 0; j < n; j++) {
+                    if (board.isValidMove(i, j)) {
+                        //System.out.println(i + ", " + j);
+                        //System.out.println(board);
+                        parent = parent.newChild(i, j);
+                        System.out.println(parent);
+                        try {
+                            System.in.read();
+                        } catch (final IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        boards[i] = board = board.addQueen(parent);
+                        i++;
+                        continue outer;
+                    }
+                }
+                // backtrack
+                final Queen child = parent;
+                parent = child.parent;
+                child.delete();
+                boards[i] = null;
+                i--;
+                board = boards[i];
+            }
+            // completely finished
+            if (i == start) {
+                return solutionCount;
+            }
+        }
     }
     
     private void countSolutions() {
@@ -296,6 +376,9 @@ public class NQueens {
         allSolutionsTest(8, true);
         //numSolutionsTest(16);
         //allSolutionsTest(9, true);
+        final int n = 2;
+        final NQueens nq = new NQueens(n);
+        //System.out.println(nq.countSolutionsIter2(0, new LongChessBoard(n)));
     }
     
 }

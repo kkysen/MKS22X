@@ -31,6 +31,8 @@ public abstract class ChessBoard implements Cloneable {
     
     public abstract boolean get(final int i, final int j);
     
+    public abstract void flip(final int i, final int j);
+    
     public boolean isValidMove(final int i, final int j) {
         return !get(i, j);
     }
@@ -39,33 +41,55 @@ public abstract class ChessBoard implements Cloneable {
     
     protected abstract void addQueenColumn(int j);
     
-    public ChessBoard addQueen(final Queen queen) {
+    public ChessBoard addQueen(final int i, final int j) {
         numAdds++;
         final ChessBoard newBoard = clone();
-        newBoard.addQueenColumn(queen.j);
-        for (int i = queen.i, j = queen.j; j >= 0 && i < n; j--, i++) {
-            newBoard.set(i, j);
+        newBoard.addQueenColumn(j);
+        for (int y = i, x = j; x >= 0 && y < n; x--, y++) {
+            newBoard.set(y, x);
         }
-        for (int i = queen.i, j = queen.j; j < n && i < n; j++, i++) {
-            newBoard.set(i, j);
+        for (int y = i, x = j; x < n && y < n; x++, y++) {
+            newBoard.set(y, x);
         }
         return newBoard;
+    }
+    
+    public ChessBoard addQueen(final Queen queen) {
+        return addQueen(queen.i, queen.j);
     }
     
     public void removeQueen(final Queen queen) {
         // default is cloning, so removing not needed
     }
     
-    public String toString(final char queen, final char empty) {
+    public static interface CharChooser {
+        
+        public char choose(int i, int j, boolean full);
+        
+    }
+    
+    public String toString(final CharChooser chooser) {
         final StringBuilder sb = new StringBuilder(n * (n + 1));
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                sb.append(get(i, j) ? queen : empty);
+                //System.out.println("\t" + chooser.choose(i, j, get(i, j)));
+                sb.append(chooser.choose(i, j, get(i, j)));
                 sb.append(' ');
             }
             sb.append('\n');
         }
         return sb.toString();
+    }
+    
+    public String toString(final char queen, final char empty) {
+        return toString(new CharChooser() {
+            
+            @Override
+            public char choose(final int i, final int j, final boolean full) {
+                return full ? queen : empty;
+            }
+            
+        });
     }
     
     @Override

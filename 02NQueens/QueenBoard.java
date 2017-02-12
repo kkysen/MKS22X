@@ -25,9 +25,9 @@ public class QueenBoard {
         delegate = new NQueens(size);
     }
     
-    public boolean solve() {
+    public void solve() {
         solution = delegate.solution().get(size);
-        return solution != null;
+        //return solution != null;
     }
     
     public boolean countSolutions() {
@@ -38,8 +38,15 @@ public class QueenBoard {
         return (int) delegate.numSolutions();
     }
     
+    public int getSolutionCount() {
+        return getCount();
+    }
+    
     @Override
     public String toString() {
+        if (solution == null) {
+            return "";
+        }
         return solution.board().toString('Q', '_');
     }
     
