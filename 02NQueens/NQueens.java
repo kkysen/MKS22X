@@ -1,5 +1,6 @@
-import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,18 +12,22 @@ public class NQueens {
     
     private final int n;
     
-    private final Queen root;
-    
-    private boolean solved = false;
     private long solutionCount = -1;
-    private List<List<Queen>> solutions;
-    private List<Queen> solution;
     
-    private int numCalls = 0;
+    private final long all; // mask for n 1's
+    
+    private final long[] moves; // stored as bits
+    private final List<long[]> solutions = new ArrayList<>(); // keeps track of what columns queens are placed in
+    private List<ChessBoard> boards;
+    private ChessBoard board;
     
     public NQueens(final int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("size n must be non-negative");
+        }
         this.n = n;
-        root = Queen.root(n);
+        all = (1L << n) - 1; // all 1's
+        moves = new long[n];
     }
     
     private void checkSize() {
@@ -33,141 +38,51 @@ public class NQueens {
         }
     }
     
-    @Deprecated
-    private boolean countSolutions(final int i, final long cols, final Queen parent) {
-        if (i == n) {
+    /**
+     * counts all solutions bitwise, is extremely fast
+     * 
+     * @param cols tracks invalid places by columns
+     * @param ld tracks invalid places by the left diagonal
+     * @param rd tracks invalid places by the right diagonal
+     */
+    private void countSolutions(final long cols, final long ld, final long rd) {
+        if (cols == all) {
             solutionCount++;
-            return true;
+            return;
         }
-        boolean deadend = true;
-        for (int j = 0; j < n; j++) {
-            final long col = 1 << j;
-            if ((cols & col) != col && parent.isValidMove(i, j)) {
-                if (countSolutions(i + 1, cols | col, parent.newChild(i, j))) {
-                    deadend = true;
-                }
-            }
-        }
-        return !deadend;
-    }
-    
-    private boolean countSolutions(final int i, final ChessBoard board) {
-        if (i == n) {
-            solutionCount++;
-            return true;
-        }
-        if (board.isRowFull(i)) {
-            return false;
-        }
-        boolean deadend = true;
-        for (int j = 0; j < n; j++) {
-            if (board.isValidMove(i, j)) {
-                if (countSolutions(i + 1, board.addQueen(new Queen(n, i, j)))) {
-                    deadend = true;
-                }
-            }
-        }
-        return !deadend;
-    }
-    
-    //    private long countSolutionsIter2(final int start, ChessBoard board) {
-    //        long solutionCount = 0;
-    //        final int[] jMoves = new int[n];
-    //        final ChessBoard[] boards = new ChessBoard[n];
-    //        int i = start;
-    //        int j = 0;
-    //        for (;;) {
-    //            // exit
-    //            if (i == start - 1) {
-    //                return solutionCount;
-    //            }
-    //            if (i == n) {
-    //                solutionCount++;
-    //            }
-    //            if (board.isRowFull(i) || j == n) {
-    //                // backtrack
-    //                i--;
-    //                j = jMoves[i];
-    //                board = boards[i];
-    //            }
-    //            if (!board.isValidMove(i, j)) {
-    //                continue;
-    //            }
-    //            // add to stack
-    //            jMoves[i] = j;
-    //            boards[i] = board;
-    //            board = board.addQueen(i, j);
-    //            i++;
-    //            j++;
-    //            continue;
-    //        }
-    //    }
-    //
-    //    }
-    
-    @Deprecated
-    private long countSolutionsIter(final int start, ChessBoard board) {
-        int i = start;
-        long solutionCount = 0;
-        final ChessBoard[] boards = new ChessBoard[n];
-        boards[i] = board;
-        Queen parent = root;
-        outer: for (;;) {
-            // a solution
-            if (i == n) {
-                solutionCount++;
-            } else if (!board.isRowFull(i)) {
-                for (int j = 0; j < n; j++) {
-                    if (board.isValidMove(i, j)) {
-                        //System.out.println(i + ", " + j);
-                        //System.out.println(board);
-                        parent = parent.newChild(i, j);
-                        System.out.println(parent);
-                        try {
-                            System.in.read();
-                        } catch (final IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                        boards[i] = board = board.addQueen(parent);
-                        i++;
-                        continue outer;
-                    }
-                }
-                // backtrack
-                final Queen child = parent;
-                parent = child.parent;
-                child.delete();
-                boards[i] = null;
-                i--;
-                board = boards[i];
-            }
-            // completely finished
-            if (i == start) {
-                return solutionCount;
-            }
+        long row = ~(cols | ld | rd) & all; // 1's are empty
+        while (row != 0) {
+            final long col = row & -row; // next open column (least significant bit)
+            row -= col; // place queen
+            // add col bit to cols, ld, and rd
+            // shift ld to the right and rd to the left
+            countSolutions(cols | col, (ld | col) >>> 1, (rd | col) << 1);
         }
     }
     
+    /**
+     * wraps the bitwise countSolutions(long cols, long ld, long rd)
+     * takes advantage of basic reflection symmetry to only find half of the
+     * boards and then multiply by 2
+     */
     private void countSolutions() {
-        // m is the symmetric version of n
-        int m = n >>> 1;
-        final ChessBoard board = new LongChessBoard(n);
-        int i = 0;
-        for (int j = 0; j < m; j++) {
-            countSolutions(i + 1, board.addQueen(new Queen(n, i, j)));
-            //countSolutions(i + 1, 1L << j, root.newChild(i, j));
+        // mid is the symmetric version of n
+        int mid = n >>> 1;
+        for (int j = 0; j < mid; j++) {
+            final long col = 1L << j;
+            countSolutions(col, col >>> 1, col << 1);
         }
         // if n is odd you need to account for the middle column
         if ((n & 1) == 1) {
-            final ChessBoard middleBoard = board.addQueen(new Queen(n, i, m));
-            i++;
-            m--; // exclude position right below and to the left of the top middle
-            for (int j = 0; j < m; j++) {
-                countSolutions(i + 1, middleBoard.addQueen(new Queen(n, i, j)));
+            final long midCol = 1L << mid;
+            mid--; // exclude position right below and to the left of the top middle
+            for (int j = 0; j < mid; j++) {
+                final long col = 1L << j;
+                final long cols = midCol | col;
+                final long ld = (midCol >>> 1 | col) >>> 1;
+                final long rd = (midCol << 1 | col) << 1;
+                countSolutions(cols, ld, rd);
             }
-            //countSolutions(i + 1, board.addQueen(new Queen(n, i, m)));
-            //countSolutions(i + 1, 1L << m + 1, root.newChild(i, m));
         }
         // double because of symmetry
         solutionCount *= 2;
@@ -178,207 +93,152 @@ public class NQueens {
             return solutionCount;
         }
         checkSize();
-        solutionCount++;
+        solutionCount++; // set to 0
         countSolutions();
-        //countSolutions(0, new LongChessBoard(n));
-        //root.clear();
         return solutionCount;
     }
     
-    private boolean solveForTree(final int i, final long cols, final Queen parent) {
-        if (i == n) {
+    private void findAllBoards(final int i, final long cols, final long ld, final long rd) {
+        if (cols == all) {
             solutionCount++;
-            return true;
+            solutions.add(Arrays.copyOf(moves, n)); // save solution
+            return;
         }
-        boolean deadend = true;
-        for (int j = 0; j < n; j++) {
+        long row = ~(cols | ld | rd) & all; // 1's are empty
+        while (row != 0) {
+            final long col = row & -row; // next open column (least significant bit)
+            row -= col; // place queen
+            moves[i] = col;
+            // add col bit to cols, ld, and rd
+            // shift ld to the right and rd to the left
+            findAllBoards(i + 1, cols | col, (ld | col) >>> 1, (rd | col) << 1);
+        }
+    }
+    
+    private void findAllBoards() {
+        // mid is the symmetric version of n
+        int mid = n >>> 1;
+        for (int j = 0; j < mid; j++) {
             final long col = 1L << j;
-            if ((cols & col) != col && parent.isValidMove(i, j)) {
-                final Queen newQueen = parent.newChild(i, j);
-                final boolean newDeadend = !solveForTree(i + 1, cols | col, newQueen);
-                if (newDeadend) {
-                    newQueen.delete();
-                }
-                if (deadend) {
-                    deadend = newDeadend;
-                }
+            moves[0] = col;
+            findAllBoards(1, col, col >>> 1, col << 1);
+        }
+        
+        // if n is odd you need to account for the middle column
+        if ((n & 1) == 1) {
+            final long midCol = 1L << mid;
+            moves[0] = midCol;
+            mid--; // exclude position right below and to the left of the top middle
+            for (int j = 0; j < mid; j++) {
+                final long col = 1L << j;
+                moves[1] = col;
+                final long cols = midCol | col;
+                final long ld = (midCol >>> 1 | col) >>> 1;
+                final long rd = (midCol << 1 | col) << 1;
+                findAllBoards(2, cols, ld, rd);
             }
         }
-        return !deadend;
+        
+        // double because of reflective symmetry
+        solutionCount <<= 1;
     }
     
-    /**
-     * @param i
-     * @param cols
-     * @param board
-     * @param parent
-     * 
-     * @implNote
-     *           cols is a long bit set. 64 bits is sufficiently large for the
-     *           N-Queens problem and is pretty much unsolvable at that point.
-     *           Even a 32-bit int should be large enough.
-     */
-    @Deprecated
-    private boolean solveForTree(final int i, final ChessBoard board,
-            final Queen parent) {
-        numCalls++;
-        if (i == n) {
-            solutionCount++;
-            return true;
-        }
-        if (board.isRowFull(i)) {
-            return false;
-        }
-        boolean deadend = true;
-        for (int j = 0; j < n; j++) {
-            if (board.isValidMove(i, j)) {
-                final Queen newQueen = parent.newChild(i, j);
-                final boolean newDeadend = //
-                        !solveForTree(i + 1, board.addQueen(newQueen), newQueen);
-                board.removeQueen(newQueen);
-                if (newDeadend) {
-                    newQueen.delete();
-                }
-                if (deadend) {
-                    deadend = newDeadend;
-                }
-            }
-        }
-        return !deadend;
-    }
-    
-    public Queen solutionTree() {
-        if (solved) {
-            return root;
+    public List<ChessBoard> allSolutions() {
+        if (boards != null) {
+            return boards;
         }
         checkSize();
-        solutionCount++;
-        //solveForTree(0, new LongChessBoard(n), root);
-        solveForTree(0, 0L, root);
-        solved = true;
-        return root;
+        solutionCount++; // set to 0
+        findAllBoards();
+        
+        // copy a reverse of all solutions because of reflective symmetry
+        // will fail if solutionCount > Integer.MAX_VALUE (if n >= 19)
+        boards = new ArrayList<>((int) solutionCount);
+        final int len = (int) (solutionCount >>> 1);
+        for (int i = 0; i < len; i++) {
+            final long[] solution = solutions.get(i);
+            final long[] reverse = new long[solution.length]; // better JIT optimizations
+            for (int j = 0; j < reverse.length; j++) {
+                reverse[j] = Long.reverse(solution[j]) >> 64 - n;
+            }
+            boards.add(new LongChessBoard(solution));
+            boards.add(new LongChessBoard(reverse));
+        }
+        return boards;
     }
     
-    private List<List<Queen>> solutions(final boolean solve) {
-        if (solutions != null) {
-            return solutions;
-        }
-        if (solve) {
-            solutionTree();
-        }
-        solutions = new ArrayList<>();
-        root.solutions(solutions, new ArrayList<Queen>());
-        if (solutions.size() == 0) {
-            solution = null;
-        } else {
-            solution = solutions.get(0);
-        }
-        return solutions;
-    }
-    
-    public List<List<Queen>> solutions() {
-        return solutions(true);
-    }
-    
-    @Deprecated
-    private boolean solveForFirstSolution(final int i, final long cols, final Queen parent) {
-        if (i == n) {
+    private boolean findFirstBoard(final int i, final long cols, final long ld, final long rd) {
+        if (cols == all) {
             return true;
         }
-        for (int j = 0; j < n; j++) {
-            final long col = 1L << j;
-            if ((cols & col) != col && parent.isValidMove(i, j)) {
-                final Queen newQueen = parent.newChild(i, j);
-                if (solveForFirstSolution(i + 1, cols | col, newQueen)) {
-                    return true;
-                } else {
-                    newQueen.delete();
-                }
+        long row = ~(cols | ld | rd) & all; // 1's are empty
+        while (row != 0) {
+            final long col = row & -row; // next open column (least significant bit)
+            row -= col; // place queen
+            moves[i] = col;
+            // add col bit to cols, ld, and rd
+            // shift ld to the right and rd to the left
+            if (findFirstBoard(i + 1, cols | col, (ld | col) >>> 1, (rd | col) << 1)) {
+                return true;
             }
         }
         return false;
     }
     
-    private boolean solveForFirstSolution(final int i, final ChessBoard board,
-            final Queen parent) {
-        numCalls++;
-        if (i == n) {
-            return true;
+    public ChessBoard firstSolution() {
+        if (board != null) {
+            return board;
         }
-        if (board.isRowFull(i)) {
-            return false;
-        }
-        for (int j = 0; j < n; j++) {
-            if (board.isValidMove(i, j)) {
-                final Queen newQueen = parent.newChild(i, j);
-                if (solveForFirstSolution(i + 1, board.addQueen(newQueen), newQueen)) {
-                    return true;
-                } else {
-                    newQueen.delete();
-                }
-            }
-        }
-        return false;
-    }
-    
-    public List<Queen> solution() {
-        if (solved) {
-            solutions(false);
-            return solution;
-        }
-        final ChessBoard board = n <= 64 ? new LongChessBoard(n) : new BigChessBoard(n);
-        solveForFirstSolution(0, board, root);
-        //solveForFirstSolution(0, 0L, root);
-        solutions(false);
-        solutions = null;
-        root.clear();
-        return solution;
+        checkSize();
+        findFirstBoard(0, 0L, 0L, 0L);
+        board = new LongChessBoard(moves);
+        return board;
     }
     
     public static void numSolutionsTest(final int n) {
         final long start = System.nanoTime();
         final NQueens nQueens = new NQueens(n);
-        System.out.println(nQueens.numSolutions());
+        final DecimalFormat formatter = new DecimalFormat();
+        final long numSolutions = nQueens.numSolutions();
+        System.out.println(formatter.format(numSolutions) + " solutions");
         final double seconds = (System.nanoTime() - start) / 1e9;
         System.out.println(seconds + " sec");
+        final long solutionsPerSec = (long) (numSolutions / seconds);
+        System.out.println(formatter.format(solutionsPerSec) + " solutions per sec");
     }
     
     public static void allSolutionsTest(final int n, final boolean print) {
         final long start = System.nanoTime();
         final NQueens nQueens = new NQueens(n);
-        System.out.println(nQueens.solutionTree().numSolutions());
+        nQueens.allSolutions();
         final double seconds = (System.nanoTime() - start) / 1e9;
         if (print) {
-            for (final List<Queen> solution : nQueens.solutions()) {
-                System.out.println(solution.get(n));
+            for (final ChessBoard solution : nQueens.allSolutions()) {
+                System.out.println(solution);
             }
         }
-        System.out.println(nQueens.solutionTree().numSolutions());
+        System.out.println(nQueens.numSolutions());
         System.out.println(seconds + " sec");
-        System.out.println("numSolves = " + nQueens.numCalls);
-        System.out.println(ChessBoard.stats());
     }
     
-    public static void oneSolutionTest(final int n) {
+    public static void firstSolutionTest(final int n) {
         final long start = System.nanoTime();
         final NQueens nQueens = new NQueens(n);
-        final List<Queen> solution = nQueens.solution();
-        System.out.println(solution.get(n));
+        nQueens.firstSolution();
         final double seconds = (System.nanoTime() - start) / 1e9;
+        System.out.println(nQueens.firstSolution());
         System.out.println(seconds + " sec");
-        System.out.println("numSolves = " + nQueens.numCalls);
-        System.out.println(ChessBoard.stats());
     }
     
     public static void main(final String[] args) {
-        //oneSolutionTest(30);
-        //allSolutionsTest(15, false);
-        allSolutionsTest(8, true);
-        //numSolutionsTest(16);
-        //allSolutionsTest(9, true);
-        final int n = 2;
-        final NQueens nq = new NQueens(n);
-        //System.out.println(nq.countSolutionsIter2(0, new LongChessBoard(n)));
+        //firstSolutionTest(35);
+        //allSolutionsTest(16, false);
+        //allSolutionsTest(8, true);
+        for (int n = 0; n <= 17; n++) {
+            System.out.println("n = " + n);
+            numSolutionsTest(n);
+            System.out.println();
+        }
     }
     
 }

@@ -26,6 +26,13 @@ public class LongChessBoard extends ChessBoard {
         numClones++;
     }
     
+    public LongChessBoard(final long[] rows) {
+        super(rows.length);
+        this.rows = rows;
+        cols = 0L; // doesn't matter
+        fullMask = 0L; // doesn't matter
+    }
+    
     @Override
     public LongChessBoard clone() {
         return new LongChessBoard(this);
@@ -57,6 +64,19 @@ public class LongChessBoard extends ChessBoard {
     @Override
     public void flip(final int i, final int j) {
         rows[i] ^= 1L << j;
+    }
+    
+    @Override
+    public LongChessBoard addQueen(final int i, final int j) {
+        final LongChessBoard newBoard = clone();
+        newBoard.addQueenColumn(j);
+        for (int y = i, x = j; x >= 0 && y < n; x--, y++) {
+            newBoard.set(y, x);
+        }
+        for (int y = i, x = j; x < n && y < n; x++, y++) {
+            newBoard.set(y, x);
+        }
+        return newBoard;
     }
     
 }

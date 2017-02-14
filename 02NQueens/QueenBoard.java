@@ -18,7 +18,7 @@ public class QueenBoard {
     
     private final NQueens delegate;
     
-    private Queen solution;
+    private ChessBoard solution;
     
     public QueenBoard(final int size) {
         this.size = size;
@@ -26,8 +26,7 @@ public class QueenBoard {
     }
     
     public void solve() {
-        solution = delegate.solution().get(size);
-        //return solution != null;
+        solution = delegate.firstSolution();
     }
     
     public boolean countSolutions() {
@@ -47,14 +46,14 @@ public class QueenBoard {
         if (solution == null) {
             return "";
         }
-        return solution.board().toString('Q', '_');
+        return solution.toString('Q', '_');
     }
     
     public static void main(final String[] args) {
-        final QueenBoard board = new QueenBoard(15);
+        final QueenBoard board = new QueenBoard(30);
         board.solve();
         System.out.println(board);
-        System.out.println(board.getCount());
+        //System.out.println(board.getCount());
     }
     
 }
