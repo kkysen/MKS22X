@@ -13,7 +13,7 @@ public class KnightBoard {
     private final KnightsTour delegate;
     
     public KnightBoard(final int m, final int n) {
-        delegate = new KnightsTour(m, n);
+        delegate = new IterativeWarnsdorffKnightsTour(m, n);
     }
     
     public void solve() {

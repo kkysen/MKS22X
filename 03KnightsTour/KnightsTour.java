@@ -1,3 +1,5 @@
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.Arrays;
 
 /**
@@ -5,103 +7,72 @@ import java.util.Arrays;
  * 
  * @author Khyber Sen
  */
-public class KnightsTour {
+public abstract class KnightsTour {
     
-    private static final int NUM_MOVES = 8;
-    private static final int[] I_MOVES = {2, 1, -1, -2, -2, -1, 1, 2};
-    private static final int[] J_MOVES = {1, 2, 2, 1, -1, -2, -2, -1};
+    protected static final int NUM_MOVES = 8;
+    protected static final int[] I_MOVES = {2, 1, -1, -2, -2, -1, 1, 2};
+    protected static final int[] J_MOVES = {1, 2, 2, 1, -1, -2, -2, -1};
     
-    private final int m;
-    private final int n;
-    private final int mn;
+    protected final int m;
+    protected final int n;
+    protected final int mn;
     
-    private final int realM;
-    private final int realN;
+    protected final int realM;
+    protected final int realN;
     
-    private final boolean[][] board;
+    protected final int[][] moves;
     
-    //private final long[] rows;
+    protected int moveNum = 0;
+    protected final int[] iMoves;
+    protected final int[] jMoves;
     
-    //private final long sideMask;
+    protected boolean solved;
     
-    private int moveNum = 0;
-    private final int[] iMoves;
-    private final int[] jMoves;
-    
-    private void initBoard() {
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                board[i + 2][j + 2] = true;
-            }
-        }
-    }
-    
-    private void checkForNoSolution(final int m, final int n) {
-        if ((m & 1) == 1 && (n & 1) == 1
-                || m == 1 || m == 2 || m == 4
-                || m == 3 && (n == 4 || n == 6 || n == 8)) {
-            System.err.println("no solution exists");
-        }
-    }
-    
-    public KnightsTour(final int m, final int n) {
-        checkForNoSolution(m, n);
-        checkForNoSolution(n, m);
+    protected KnightsTour(final int m, final int n) {
         this.m = m;
         this.n = n;
         mn = m * n;
         realM = m + 4;
         realN = n + 4;
-        board = new boolean[realM][realN]; // border avoids bounds checking
-        initBoard();
+        moves = new int[realM][realN]; // border avoids bounds checking
+        initMoves();
         iMoves = new int[mn];
         jMoves = new int[mn];
     }
     
-    public KnightsTour(final int n) {
-        this(n, n);
+    protected void initMoves() {}
+    
+    public int tourLength() {
+        return mn;
     }
     
-    private boolean isValidMove(final int i, final int j) {
-        return board[i + 2][j + 2];
+    public int getHeight() {
+        return m;
     }
     
-    private void move(final int i, final int j) {
-        board[i + 2][j + 2] = false;
-        iMoves[moveNum] = i;
-        jMoves[moveNum] = j;
-        moveNum++;
+    public int getWidth() {
+        return n;
     }
     
-    private void undo(final int i, final int j) {
-        board[i + 2][j + 2] = true;
-        moveNum--;
-    }
+    public abstract boolean findTour();
     
-    public boolean findTour(final int i, final int j) {
-        if (moveNum == mn) {
-            return true;
-        }
-        if (moveNum == 0) {
-            //move(i, j);
-        }
-        for (int k = 0; k < NUM_MOVES; k++) {
-            final int nextI = i + I_MOVES[k];
-            final int nextJ = j + J_MOVES[k];
-            if (isValidMove(nextI, nextJ)) {
-                move(nextI, nextJ);
-                if (findTour(nextI, nextJ)) {
-                    return true;
-                } else {
-                    undo(nextI, nextJ);
+    public boolean verify() {
+        final boolean[][] board = new boolean[m][n];
+        for (int moveNum = 0; moveNum < mn; moveNum++) {
+            final int i = iMoves[moveNum];
+            final int j = jMoves[moveNum];
+            if (board[i][j] == true) {
+                if (m < 100 && n < 100) {
+                    System.err.println(this);
                 }
+                System.err.println("invalid move #" + moveNum + ": " + i + ", " + j);
+                //throw new IllegalStateException("invalid solution");
+                return false;
             }
+            board[i][j] = true;
         }
-        return false;
-    }
-    
-    public boolean findTour() {
-        return findTour(0, 0);
+        System.out.println("solution verified");
+        return true;
     }
     
     private static String padLeft(final String s, final int length) {
@@ -114,41 +85,57 @@ public class KnightsTour {
         return padLeft(String.valueOf(i), length);
     }
     
-    private static StringBuilder join(final String delimiter, final String[] strings) {
-        final StringBuilder sb = new StringBuilder(strings[0]);
-        for (int i = 1; i < strings.length; i++) {
-            sb.append(delimiter);
-            sb.append(strings[i]);
+    protected String toStringIgnoreSolve() {
+        final int padLength = String.valueOf(mn).length();
+        final StringBuilder sb = new StringBuilder((padLength + 1) * mn);
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                sb.append(padLeft(moves[i + 2][j + 2], padLength));
+                sb.append(' ');
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append('\n');
         }
-        return sb;
-    }
-    
-    private static StringBuilder join(final String rowDelimiter, final String columnDelimiter,
-            final String[][] strings) {
-        final StringBuilder sb = new StringBuilder(join(columnDelimiter, strings[0]));
-        for (final String[] string : strings) {
-            sb.append(rowDelimiter);
-            sb.append(join(columnDelimiter, string));
-        }
-        return sb;
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
     }
     
     @Override
     public String toString() {
-        System.out.println(Arrays.toString(iMoves));
-        System.out.println(Arrays.toString(jMoves));
-        final String[][] solution = new String[m][n];
-        final int padLength = String.valueOf(mn).length();
-        for (int k = 0; k < mn; k++) {
-            solution[iMoves[k]][jMoves[k]] = padLeft(k + 1, padLength);
+        if (!solved) {
+            return "";
         }
-        return join(" ", "\n", solution).toString();
+        return toStringIgnoreSolve();
     }
     
-    public static void main(final String[] args) {
-        final KnightsTour kt = new KnightsTour(5, 6);
+    public static void test(final KnightsTour kt, final boolean print)
+            throws FileNotFoundException {
+        final int m = kt.getHeight();
+        final int n = kt.getWidth();
+        final long start = System.nanoTime();
         kt.findTour();
-        System.out.println(kt);
+        final double seconds = (System.nanoTime() - start) / 1e9;
+        if (print && m < 100 && n < 100) {
+            System.out.println(kt);
+        }
+        kt.verify();
+        final String time = seconds + " sec";
+        final PrintStream out = new PrintStream("C:/Users/kkyse/Downloads/KnightsTourOut.txt");
+        out.println("Knight's Tour");
+        out.println(m + "x" + n + " board");
+        out.println();
+        out.println(time);
+        out.println(kt);
+        out.close();
+        if (print) {
+            System.out.println("Knight's Tour");
+            System.out.println(m + "x" + n + " board");
+            System.out.println(time);
+        }
+    }
+    
+    public static void test(final KnightsTour kt) throws FileNotFoundException {
+        test(kt, true);
     }
     
 }
