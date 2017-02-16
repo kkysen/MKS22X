@@ -1,3 +1,4 @@
+import java.util.Arrays;
 
 /**
  * 
@@ -10,65 +11,79 @@ public class KnightsTour {
     private static final int[] I_MOVES = {2, 1, -1, -2, -2, -1, 1, 2};
     private static final int[] J_MOVES = {1, 2, 2, 1, -1, -2, -2, -1};
     
+    private final int m;
     private final int n;
-    private final int nn;
-    private final int m; // size of actual board w/ border
+    private final int mn;
     
-    private final long[] rows;
+    private final int realM;
+    private final int realN;
     
-    private final long sideMask;
+    private final boolean[][] board;
+    
+    //private final long[] rows;
+    
+    //private final long sideMask;
     
     private int moveNum = 0;
     private final int[] iMoves;
     private final int[] jMoves;
-    private final ChessBoard board;
     
-    public KnightsTour(final int n) {
-        this.n = n;
-        nn = n * n;
-        m = n + 4;
-        rows = new long[m]; // border avoids bounds checking
-        sideMask = 0b11L | 0b11L << m - 2;
-        initBorder();
-        iMoves = new int[nn];
-        jMoves = new int[nn];
-        board = new LongChessTour(n);
-    }
-    
-    private void initBorder() {
-        // fill top and bottom
-        rows[0] = -1L;
-        rows[1] = -1L;
-        rows[m - 1] = -1L;
-        rows[m - 2] = -1L;
-        // fill sides
-        for (int i = 2; i < m - 2; i++) {
-            rows[i] = sideMask;
+    private void initBoard() {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                board[i + 2][j + 2] = true;
+            }
         }
     }
     
+    private void checkForNoSolution(final int m, final int n) {
+        if ((m & 1) == 1 && (n & 1) == 1
+                || m == 1 || m == 2 || m == 4
+                || m == 3 && (n == 4 || n == 6 || n == 8)) {
+            System.err.println("no solution exists");
+        }
+    }
+    
+    public KnightsTour(final int m, final int n) {
+        checkForNoSolution(m, n);
+        checkForNoSolution(n, m);
+        this.m = m;
+        this.n = n;
+        mn = m * n;
+        realM = m + 4;
+        realN = n + 4;
+        board = new boolean[realM][realN]; // border avoids bounds checking
+        initBoard();
+        iMoves = new int[mn];
+        jMoves = new int[mn];
+    }
+    
+    public KnightsTour(final int n) {
+        this(n, n);
+    }
+    
     private boolean isValidMove(final int i, final int j) {
-        return (rows[i + 2] >>> j + 2 & 1) == 0;
+        return board[i + 2][j + 2];
     }
     
     private void move(final int i, final int j) {
-        rows[i + 2] |= 1L << j + 2;
+        board[i + 2][j + 2] = false;
         iMoves[moveNum] = i;
         jMoves[moveNum] = j;
-        board.set(i, j);
         moveNum++;
     }
     
-    private void clear(final int i, final int j) {
-        rows[i + 2] ^= 1L << j + 2;
-        board.flip(i, j);
+    private void undo(final int i, final int j) {
+        board[i + 2][j + 2] = true;
         moveNum--;
-        // no need to clear prev moves, just overwrite
     }
     
     public boolean findTour(final int i, final int j) {
-        if (moveNum == nn) {
+        if (moveNum == mn) {
             return true;
+        }
+        if (moveNum == 0) {
+            //move(i, j);
         }
         for (int k = 0; k < NUM_MOVES; k++) {
             final int nextI = i + I_MOVES[k];
@@ -78,95 +93,62 @@ public class KnightsTour {
                 if (findTour(nextI, nextJ)) {
                     return true;
                 } else {
-                    clear(nextI, nextJ);
+                    undo(nextI, nextJ);
                 }
             }
         }
         return false;
     }
     
-    public boolean solve(int i, int j) {
-        //        int[] moves = new int[nn];
-        //        int k = 0;
-        //        move(i, j);
-        //        for (;;) {
-        //            if (moveNum == nn) {
-        //                return true;
-        //            }
-        //            if (k == NUM_MOVES) {
-        //                if (moveNum == 0) {
-        //                    return false;
-        //                }
-        //                clear(i, j);
-        //                i = iMoves[moveNum];
-        //                j = jMoves[moveNum];
-        //            }
-        //
-        //        }
-        //
-        //
-        //
-        
-        // FIXME
-        // must have k stack
-        // clear not clearing bits
-        
-        final ChessBoard aBoard = board;
-        final KnightsTour tour = this;
-        final int[] iiMoves = iMoves;
-        final int[] jjMoves = jMoves;
-        move(i, j);
-        outer: for (;;) {
-            // exit when successful
-            if (moveNum == nn) {
-                return true;
-            }
-            if (i == 1 && j == 0) {
-                i++;
-                i--;
-            }
-            for (int k = 0; k < NUM_MOVES; k++) {
-                final int iMove = I_MOVES[k];
-                final int jMove = J_MOVES[k];
-                i += iMove;
-                j += jMove;
-                if (isValidMove(i, j)) {
-                    // add to stack
-                    move(i, j);
-                    continue outer;
-                }
-                // set i, j to original vals
-                i -= iMove;
-                j -= jMove;
-            }
-            // exit when failed
-            if (moveNum == 0) {
-                return false;
-            }
-            // backtrack
-            clear(i, j);
-            moveNum--;
-            i = iMoves[moveNum];
-            j = jMoves[moveNum];
-            moveNum++;
-        }
+    public boolean findTour() {
+        return findTour(0, 0);
     }
     
-    public void printTour() {
-        final ChessBoard board = new LongChessTour(n);
-        for (int k = 0; k < nn; k++) {
-            final int iMove = iMoves[k];
-            final int jMove = jMoves[k];
-            //System.out.println(i + ", " + j);
-            board.set(iMove, jMove);
-            System.out.println(k + "\n" + board + "\n");
+    private static String padLeft(final String s, final int length) {
+        final char[] pad = new char[length - s.length()];
+        Arrays.fill(pad, ' ');
+        return s + new String(pad);
+    }
+    
+    private static String padLeft(final int i, final int length) {
+        return padLeft(String.valueOf(i), length);
+    }
+    
+    private static StringBuilder join(final String delimiter, final String[] strings) {
+        final StringBuilder sb = new StringBuilder(strings[0]);
+        for (int i = 1; i < strings.length; i++) {
+            sb.append(delimiter);
+            sb.append(strings[i]);
         }
+        return sb;
+    }
+    
+    private static StringBuilder join(final String rowDelimiter, final String columnDelimiter,
+            final String[][] strings) {
+        final StringBuilder sb = new StringBuilder(join(columnDelimiter, strings[0]));
+        for (final String[] string : strings) {
+            sb.append(rowDelimiter);
+            sb.append(join(columnDelimiter, string));
+        }
+        return sb;
+    }
+    
+    @Override
+    public String toString() {
+        System.out.println(Arrays.toString(iMoves));
+        System.out.println(Arrays.toString(jMoves));
+        final String[][] solution = new String[m][n];
+        final int padLength = String.valueOf(mn).length();
+        for (int k = 0; k < mn; k++) {
+            solution[iMoves[k]][jMoves[k]] = padLeft(k + 1, padLength);
+        }
+        return join(" ", "\n", solution).toString();
     }
     
     public static void main(final String[] args) {
-        final KnightsTour tour = new KnightsTour(5);
-        tour.solve(0, 0);
-        tour.printTour();
+        final KnightsTour kt = new KnightsTour(5, 6);
+        kt.findTour();
+        System.out.println(kt);
     }
     
 }

@@ -51,9 +51,11 @@ public class NQueens {
             return;
         }
         long row = ~(cols | ld | rd) & all; // 1's are empty
+        // iterate through 1 bits by finding next least significant bit and toggling it off
         while (row != 0) {
             final long col = row & -row; // next open column (least significant bit)
-            row -= col; // place queen
+            // row ^= col; // XOR seems to be a bit slower than subtraction for some reason
+            row -= col; // place queen by toggling off that bit
             // add col bit to cols, ld, and rd
             // shift ld to the right and rd to the left
             countSolutions(cols | col, (ld | col) >>> 1, (rd | col) << 1);
@@ -234,7 +236,7 @@ public class NQueens {
         //firstSolutionTest(35);
         //allSolutionsTest(16, false);
         //allSolutionsTest(8, true);
-        for (int n = 0; n <= 17; n++) {
+        for (int n = 0; n <= 18; n++) {
             System.out.println("n = " + n);
             numSolutionsTest(n);
             System.out.println();
