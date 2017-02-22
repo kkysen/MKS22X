@@ -55,14 +55,10 @@ public class NaiveKnightsTour extends KnightsTour {
     
     @Override
     public boolean findTour() {
-        if (solved) {
-            return true;
-        }
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 move(i, j);
                 if (findTour(i, j)) {
-                    solved = true;
                     return true;
                 }
                 undo(i, j);

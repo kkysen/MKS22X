@@ -17,7 +17,7 @@ public class KnightBoard {
     }
     
     public void solve() {
-        delegate.findTour();
+        delegate.solve();
     }
     
     @Override

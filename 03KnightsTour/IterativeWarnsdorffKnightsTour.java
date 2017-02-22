@@ -1,5 +1,6 @@
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * 
@@ -48,19 +49,25 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         move();
     }
     
-    private void undo() {
+    // true if successful undo
+    // false if can't undo b/c at the beginning
+    private boolean undo() {
         //System.err.println("undo");
         moves[i + 2][j + 2] = 0;
         // update Warnsdorff weights
         for (int k = 0; k < NUM_MOVES; k++) {
             board[i + 2 + I_MOVES[k]][j + 2 + J_MOVES[k]]++;
         }
-        //weightsStack[moveNum] = null; // not sure if memory release needed
         moveNum--;
-        i = iMoves[moveNum];
-        j = jMoves[moveNum];
+        if (moveNum == 0) {
+            return false;
+        }
+        i = iMoves[moveNum - 1];
+        j = jMoves[moveNum - 1];
         k = kStack[moveNum];
         weights = weightsStack[moveNum];
+        weightsStack[moveNum] = null; // not sure if memory release needed
+        return true;
     }
     
     private int[] getWeights() {
@@ -92,7 +99,6 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         }
         weights[minIndex] = weights[k];
         weights[k] = min;
-        k++;
         return minIndex;
     }
     
@@ -104,40 +110,47 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         final int[][] moves = this.moves;
         final KnightsTour kt = this;
         for (;;) {
-            if (moveNum == 68) {
-                System.out.println(toStringIgnoreSolve());
-                final int x = 1;
-            }
             if (moveNum == mn) {
                 return true;
             }
             if (k == NUM_MOVES) {
-                undo();
-                if (moveNum == -1) {
+                if (!undo()) {
                     return false;
                 }
             }
             final int move = bestMove();
-            if (weights[0] == VISITED) {
+            if (weights[k] == VISITED) {
+                k = NUM_MOVES;
                 continue;
             }
+            k++;
             move(move);
         }
     }
     
     @Override
-    public boolean findTour() {
-        if (solved) {
-            return true;
+    protected void clearInternalState() {
+        super.clearInternalState();
+        if (mn > 0) {
+            weightsStack[0] = null;
         }
+        Arrays.fill(kStack, 0);
+        i = 0;
+        j = 0;
+        k = 0;
+        weights = null;
+    }
+    
+    @Override
+    public boolean findTour() {
         for (; i < m; i++) {
             for (; j < n; j++) {
                 if (findTourIter()) {
-                    solved = true;
                     return true;
                 }
             }
         }
+        clearInternalState();
         return false;
     }
     
@@ -149,9 +162,11 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 try {
-                    KnightsTour.test(new IterativeWarnsdorffKnightsTour(i, j), false);
-                } catch (final RuntimeException e) {
                     System.out.println(i + "x" + j);
+                    KnightsTour.test(new IterativeWarnsdorffKnightsTour(i, j), false);
+                    System.out.println();
+                } catch (final RuntimeException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -161,14 +176,14 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         //        test(2);
         //        test(3);
         //        test(4);
-        //        for (int n = 5; n < 64; n++) {
-        //            test(n);
-        //        }
+        for (int n = 65; n < 100; n++) {
+            test(n);
+        }
+        //test(64);
         //test(63);
-        //test(66);
-        //testUpTo(25);
+        //testUpTo(50);
         //test(5000);
-        KnightsTour.test(new IterativeWarnsdorffKnightsTour(5, 14));
+        //KnightsTour.test(new IterativeWarnsdorffKnightsTour(3, 16));
     }
     
 }

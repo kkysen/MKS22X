@@ -27,6 +27,7 @@ public abstract class KnightsTour {
     protected final int[] jMoves;
     
     protected boolean solved;
+    protected boolean unsolveable;
     
     protected KnightsTour(final int m, final int n) {
         this.m = m;
@@ -54,9 +55,34 @@ public abstract class KnightsTour {
         return n;
     }
     
-    public abstract boolean findTour();
+    protected abstract boolean findTour();
+    
+    protected void clearInternalState() {
+        Arrays.fill(iMoves, 0);
+        Arrays.fill(jMoves, 0);
+    }
+    
+    public boolean solve() {
+        if (solved) {
+            return true;
+        }
+        if (unsolveable) {
+            return false;
+        }
+        if (findTour()) {
+            solved = true;
+            return true;
+        }
+        clearInternalState();
+        unsolveable = true;
+        return false;
+    }
     
     public boolean verify() {
+        if (unsolveable) {
+            System.out.println("no solution");
+            return true;
+        }
         final boolean[][] board = new boolean[m][n];
         for (int moveNum = 0; moveNum < mn; moveNum++) {
             final int i = iMoves[moveNum];
@@ -113,7 +139,7 @@ public abstract class KnightsTour {
         final int m = kt.getHeight();
         final int n = kt.getWidth();
         final long start = System.nanoTime();
-        kt.findTour();
+        kt.solve();
         final double seconds = (System.nanoTime() - start) / 1e9;
         if (print && m < 100 && n < 100) {
             System.out.println(kt);

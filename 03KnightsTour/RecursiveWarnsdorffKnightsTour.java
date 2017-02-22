@@ -20,7 +20,13 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         //System.out.println(moveNum + 1 + ": " + i + ", " + j);
         // update Warnsdorff weights
         for (int k = 0; k < NUM_MOVES; k++) {
-            board[i + I_MOVES[k] + 2][j + J_MOVES[k] + 2]--;
+            try {
+                board[i + I_MOVES[k] + 2][j + J_MOVES[k] + 2]--;
+            } catch (final ArrayIndexOutOfBoundsException e) {
+                System.out.println(toStringIgnoreSolve());
+                System.out.println("move #" + moveNum);
+                throw e;
+            }
         }
         iMoves[moveNum] = i;
         jMoves[moveNum] = j;
@@ -42,8 +48,8 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
     private int[] getWeights(final int i, final int j) {
         final int[] weights = new int[NUM_MOVES];
         for (int k = 0; k < NUM_MOVES; k++) {
-            final int nextI = i + I_MOVES[k] + 2;
-            final int nextJ = j + J_MOVES[k] + 2;
+            final int nextI = i + 2 + I_MOVES[k];
+            final int nextJ = j + 2 + J_MOVES[k];
             int weight;
             if (moves[nextI][nextJ] != 0) {
                 weight = VISITED;
@@ -78,8 +84,8 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         final int[] weights = getWeights(i, j);
         for (int k = 0; k < weights.length; k++) {
             final int move = bestMove(weights, k);
-            if (weights[0] == VISITED) {
-                continue;
+            if (weights[k] == VISITED) {
+                return false;
             }
             final int nextI = i + I_MOVES[move];
             final int nextJ = j + J_MOVES[move];
@@ -95,14 +101,10 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
     
     @Override
     public boolean findTour() {
-        if (solved) {
-            return true;
-        }
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 move(i, j);
                 if (findTour(i, j)) {
-                    solved = true;
                     return true;
                 }
                 undo(i, j);
@@ -126,8 +128,9 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         //        for (int n = 5; n < 64; n++) {
         //            test(n);
         //        }
-        //test(63);
+        test(63);
         test(5, 14);
+        test(3, 16);
     }
     
 }
