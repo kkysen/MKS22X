@@ -21,7 +21,7 @@ public class RecursiveWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         // update Warnsdorff weights
         for (int k = 0; k < NUM_MOVES; k++) {
             try {
-                board[i + I_MOVES[k] + 2][j + J_MOVES[k] + 2]--;
+                board[i + 2 + I_MOVES[k]][j + 2 + J_MOVES[k]]--;
             } catch (final ArrayIndexOutOfBoundsException e) {
                 System.out.println(toStringIgnoreSolve());
                 System.out.println("move #" + moveNum);

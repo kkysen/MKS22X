@@ -69,7 +69,7 @@ public class IterativeMaze extends Maze {
     }
     
     @Override
-    protected boolean findShortestPath() {
+    protected boolean aStarPath() {
         return false;
     }
     

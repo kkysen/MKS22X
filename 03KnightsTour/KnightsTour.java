@@ -78,6 +78,21 @@ public abstract class KnightsTour {
         return false;
     }
     
+    // quick verify w/ no final debug info
+    public boolean quickVerify() {
+        if (unsolveable) {
+            System.out.println("no solution");
+            return true;
+        }
+        int sum = 0;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                sum += moves[i + 2][j + 2];
+            }
+        }
+        return sum == mn * (mn + 1) / 2; // triangular number
+    }
+    
     public boolean verify() {
         if (unsolveable) {
             System.out.println("no solution");
@@ -145,6 +160,9 @@ public abstract class KnightsTour {
             System.out.println(kt);
         }
         kt.verify();
+        if (!kt.quickVerify()) {
+            System.out.println("not verified");
+        }
         final String time = seconds + " sec";
         final PrintStream out = new PrintStream("C:/Users/kkyse/Downloads/KnightsTourOut.txt");
         out.println("Knight's Tour");

@@ -1,4 +1,5 @@
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 /**
  * 
@@ -13,6 +14,18 @@ public class NaiveKnightsTour extends KnightsTour {
     
     public NaiveKnightsTour(final int n) {
         this(n, n);
+    }
+    
+    @Override
+    protected void initMoves() {
+        Arrays.fill(moves[0], -1);
+        Arrays.fill(moves[1], -1);
+        Arrays.fill(moves[realM - 2], -1);
+        Arrays.fill(moves[realM - 1], -1);
+        for (int i = 2; i < realM - 2; i++) {
+            final int[] row = moves[i];
+            row[0] = row[1] = row[realN - 2] = row[realN - 1] = -1;
+        }
     }
     
     private boolean isValidMove(final int i, final int j) {
@@ -34,9 +47,6 @@ public class NaiveKnightsTour extends KnightsTour {
     public boolean findTour(final int i, final int j) {
         if (moveNum == mn) {
             return true;
-        }
-        if (moveNum == 0) {
-            //move(i, j);
         }
         for (int k = 0; k < NUM_MOVES; k++) {
             final int nextI = i + I_MOVES[k];

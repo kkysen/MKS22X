@@ -42,7 +42,7 @@ public abstract class Maze {
         }
     }
     
-    public Maze(final char[][] maze) {
+    protected Maze(final char[][] maze) {
         m = maze.length;
         checkNoMaze(m);
         n = maze[0].length;
@@ -110,13 +110,13 @@ public abstract class Maze {
         return charMatrix;
     }
     
-    public Maze(final Path path) throws IOException {
+    protected Maze(final Path path) throws IOException {
         this(readAsCharMatrix(path));
     }
     
     protected abstract boolean findAnyPath();
     
-    public int[][] anyPath() {
+    public final int[][] anyPath() {
         if (solved) {
             return new int[][] {iMoves, jMoves};
         }
@@ -128,16 +128,20 @@ public abstract class Maze {
         return null;
     }
     
-    protected abstract boolean findShortestPath();
+    protected abstract boolean aStarPath();
     
-    public int[][] shortestPath() {
+    protected boolean findShortestPath() {
+        return aStarPath();
+    }
+    
+    public final int[][] shortestPath() {
         
         unsolveable = true;
         return null;
     }
     
     @Override
-    public String toString() {
+    public final String toString() {
         final StringBuilder sb = new StringBuilder(m * n);
         for (final char[] row : maze) {
             sb.append(row);

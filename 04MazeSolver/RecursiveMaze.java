@@ -52,7 +52,7 @@ public class RecursiveMaze extends Maze {
     }
     
     @Override
-    protected boolean findShortestPath() {
+    protected boolean aStarPath() {
         final PriorityQueue<Object> openSet = new PriorityQueue<>();
         return false; // FIXME
     }
