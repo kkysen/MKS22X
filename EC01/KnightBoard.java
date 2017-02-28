@@ -4,7 +4,7 @@
  * 
  * @author Khyber Sen
  */
-public class FastKnightBoard {
+public class KnightBoard {
     
     public static String name() {
         return "Sen,Khyber";
@@ -12,7 +12,7 @@ public class FastKnightBoard {
     
     private final KnightsTour delegate;
     
-    public FastKnightBoard(final int m, final int n) {
+    public KnightBoard(final int m, final int n) {
         delegate = new IterativeWarnsdorffKnightsTour(m, n);
     }
     
@@ -27,6 +27,12 @@ public class FastKnightBoard {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+    
+    public static void main(final String[] args) {
+        final KnightBoard kt = new KnightBoard(50, 50);
+        kt.solveFast();
+        System.out.println(kt);
     }
     
 }

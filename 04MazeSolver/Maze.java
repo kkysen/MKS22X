@@ -8,6 +8,10 @@ import java.nio.file.Paths;
  */
 public class Maze {
     
+    public static String name() {
+        return "Sen,Khyber";
+    }
+    
     private final AbstractMaze delegate;
     
     public Maze(final String fileName) {
