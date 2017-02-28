@@ -8,7 +8,7 @@ import java.util.PriorityQueue;
  * 
  * @author Khyber Sen
  */
-public class RecursiveMaze extends Maze {
+public class RecursiveMaze extends AbstractMaze {
     
     public RecursiveMaze(final char[][] maze) {
         super(maze);
@@ -23,20 +23,24 @@ public class RecursiveMaze extends Maze {
     }
     
     private void undo(final int i, final int j) {
-        maze[i][j] = WALL;
+        maze[i][j] = VISITED;
     }
     
-    private boolean findOnePath(final int i, final int j) {
+    private boolean findAnyPath(final int i, final int j) {
+        if (animate) {
+            animate();
+        }
+        
         final char c = maze[i][j];
         if (c == END) {
             return true;
         }
-        if (c == WALL || c == PATH) {
+        if (c != EMPTY) {
             return false;
         }
         move(i, j);
         for (int k = 0; k < NUM_MOVES; k++) {
-            if (findOnePath(i + I_MOVES[k], j + J_MOVES[k])) {
+            if (findAnyPath(i + I_MOVES[k], j + J_MOVES[k])) {
                 return true;
             }
         }
@@ -46,8 +50,8 @@ public class RecursiveMaze extends Maze {
     
     @Override
     protected boolean findAnyPath() {
-        final boolean solved = findOnePath(startI, startJ);
-        maze[startI][startJ] = START;
+        maze[startI][startJ] = EMPTY;
+        final boolean solved = findAnyPath(startI, startJ);
         return solved;
     }
     
@@ -59,7 +63,7 @@ public class RecursiveMaze extends Maze {
     
     public static void main(final String[] args) throws IOException {
         final Path path = Paths.get("04MazeSolver/maze.txt");
-        final Maze maze = new RecursiveMaze(path);
+        final AbstractMaze maze = new RecursiveMaze(path);
         maze.anyPath();
         System.out.println(maze);
     }
