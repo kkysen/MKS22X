@@ -12,3 +12,10 @@
 hs_err_pid*
 
 *.gitignore
+
+04MazeSolver/biggerMaze.dat
+04MazeSolver/generatedMaze.dat
+04MazeSolver/solvedGeneratedMaze.dat
+bin/biggerMaze.dat
+bin/generatedMaze.dat
+bin/solvedGeneratedMaze.dat

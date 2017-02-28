@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -61,7 +62,7 @@ public abstract class AbstractMaze {
         
         for (int i = 0; i < m; i++) {
             if (maze[i].length != n) {
-                throw new IllegalArgumentException("jagged maze");
+                throw new IllegalArgumentException("jagged maze: row " + i);
             }
             if (maze[i][0] != WALL || maze[i][n - 1] != WALL) {
                 throw new IllegalArgumentException("open maze");
@@ -128,6 +129,25 @@ public abstract class AbstractMaze {
         this(readAsCharMatrix(path));
     }
     
+    protected static char[][] openMazeCharMatrix(int m, int n) {
+        // don't count border as part of size
+        m += 2;
+        n += 2;
+        final char[][] maze = new char[m][n];
+        final char[] row = new char[n];
+        Arrays.fill(row, ' ');
+        row[0] = row[n - 1] = '#';
+        for (int i = 1; i < m - 1; i++) {
+            maze[i] = row.clone();
+        }
+        Arrays.fill(row, '#');
+        maze[0] = row.clone();
+        maze[m - 1] = row.clone();
+        maze[1][1] = 'S';
+        maze[m - 2][n - 2] = 'E';
+        return maze;
+    }
+    
     public void clearTerminal() {
         //erase terminal, go to top left of screen.
         System.out.println("\033[2J\033[1;1H");
@@ -153,9 +173,9 @@ public abstract class AbstractMaze {
     
     protected abstract boolean findAnyPath();
     
-    public final int[][] anyPath() {
+    public final boolean anyPath() {
         if (solved) {
-            return new int[][] {iMoves, jMoves};
+            return true;
         }
         if (findAnyPath()) {
             //maze[startI][startJ] = START;
@@ -163,7 +183,7 @@ public abstract class AbstractMaze {
             return anyPath();
         }
         unsolveable = true;
-        return null;
+        return false;
     }
     
     @Deprecated
@@ -190,6 +210,10 @@ public abstract class AbstractMaze {
         }
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
+    }
+    
+    public void save(final Path path) throws IOException {
+        Files.write(path, toString().getBytes());
     }
     
 }

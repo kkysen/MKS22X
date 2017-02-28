@@ -17,29 +17,43 @@ public class IterativeMaze extends AbstractMaze {
         super(path);
     }
     
+    public static IterativeMaze openMaze(final int m, final int n) {
+        return new IterativeMaze(openMazeCharMatrix(m, n));
+    }
+    
     @Override
     protected boolean findAnyPath() {
-        // allow JIT to remove animate checks b/c final var
+        // allow Hotspot to remove animate checks b/c final var
         final boolean localAnimate = animate;
+        
+        // copy to stack for faster access
         final int[] iStack = iMoves;
         final int[] jStack = jMoves;
         final int[] kStack = new int[maxLength];
+        
         int i = startI;
         int j = startJ;
         int k = 0;
         int moveNum = 0;
         boolean wasSolved = false;
+        
         for (;;) {
+            
+            // move
             if (k == 0) {
                 maze[i][j] = VISITED;
                 iStack[moveNum] = i;
                 jStack[moveNum] = j;
             }
+            
+            // either backtrack or fail
             if (k == NUM_MOVES) {
                 moveNum--;
+                // no solution exists
                 if (moveNum == 0) {
                     break;
                 }
+                // backtrack
                 i = iStack[moveNum];
                 j = jStack[moveNum];
                 k = kStack[moveNum];
@@ -50,28 +64,38 @@ public class IterativeMaze extends AbstractMaze {
                 animate();
             }
             
+            // check position ahead
             i += I_MOVES[k];
             j += J_MOVES[k];
             final char next = maze[i][j];
+            
+            // check if finished
             if (next == END) {
                 moveNum++;
                 wasSolved = true;
                 break;
             }
+            
+            // continue iterating through moves
             if (next != EMPTY) {
                 i -= I_MOVES[k];
                 j -= J_MOVES[k];
                 k++;
                 continue;
             }
+            
+            // "recurse"
             k++;
             kStack[moveNum] = k;
             moveNum++;
             k = 0;
         }
+        
+        // fill in final path taken
         for (int c = 0; c < moveNum; c++) {
             maze[iStack[c]][jStack[c]] = PATH;
         }
+        printMemoryStats();
         return wasSolved;
     }
     
@@ -80,33 +104,28 @@ public class IterativeMaze extends AbstractMaze {
         return false;
     }
     
+    private static void printMemoryStats() {
+        final Runtime runtime = Runtime.getRuntime();
+        System.out.println("free mem : " + runtime.freeMemory());
+        System.out.println("total mem: " + runtime.totalMemory());
+        System.out.println("max mem  : " + runtime.maxMemory());
+    }
+    
     public static void main(final String[] args) throws IOException {
-        final Path path = Paths.get("04MazeSolver/maze1.dat");
-        final AbstractMaze maze = new IterativeMaze(path);
-        //        final int m = 500;
-        //        final int n = 500;
-        //        final char[] edge = new char[n];
-        //        Arrays.fill(edge, '#');
-        //        final char[] middle = new char[n];
-        //        Arrays.fill(middle, ' ');
-        //        System.out.println(new String(middle));
-        //        middle[0] = '#';
-        //        middle[n - 1] = '#';
-        //        final char[][] grid = new char[m][n];
-        //        Arrays.fill(grid, middle);
-        //        grid[0] = edge;
-        //        grid[m - 1] = edge;
-        //        grid[1] = middle.clone();
-        //        grid[m - 2] = middle.clone();
-        //        grid[1][1] = 'S';
-        //        grid[m - 2][n - 2] = 'E';
-        //        for (final char[] row : grid) {
-        //            System.out.println(new String(row));
-        //        }
-        //        final Maze maze = new IterativeMaze(grid);
-        maze.setAnimate(true);
-        maze.anyPath();
-        System.out.println(maze);
+        AbstractMaze maze = null;
+        try {
+            maze = IterativeMaze.openMaze(1_000_000, 100);
+        } catch (final OutOfMemoryError e) {
+            printMemoryStats();
+            System.in.read();
+            throw e;
+        }
+        maze.save(Paths.get("04MazeSolver/generatedMaze.dat"));
+        final long start = System.nanoTime();
+        System.out.println(maze.anyPath());
+        final double seconds = (System.nanoTime() - start) / 1e9;
+        maze.save(Paths.get("04MazeSolver/solvedGeneratedMaze.dat"));
+        System.out.println(seconds + " sec");
     }
     
 }
