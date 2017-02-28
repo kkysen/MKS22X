@@ -156,7 +156,8 @@ public abstract class KnightsTour {
         final long start = System.nanoTime();
         kt.solve();
         final double seconds = (System.nanoTime() - start) / 1e9;
-        if (print && m < 100 && n < 100) {
+        final int maxPrintSize = 150;
+        if (print && m < maxPrintSize && n < maxPrintSize) {
             System.out.println(kt);
         }
         kt.verify();

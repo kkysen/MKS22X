@@ -176,14 +176,15 @@ public class IterativeWarnsdorffKnightsTour extends WarnsdorffKnightsTour {
         //        test(2);
         //        test(3);
         //        test(4);
-        for (int n = 65; n < 100; n++) {
-            test(n);
-        }
+        //        for (int n = 65; n < 100; n++) {
+        //            test(n);
+        //        }
         //test(64);
         //test(63);
         //testUpTo(50);
         //test(5000);
         //KnightsTour.test(new IterativeWarnsdorffKnightsTour(3, 16));
+        test(103);
     }
     
 }
