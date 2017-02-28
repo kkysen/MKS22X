@@ -14,15 +14,12 @@ public class QueenBoard {
         return "Sen,Khyber";
     }
     
-    private final int size;
-    
     private final NQueens delegate;
     
-    private int solutionCount;
+    private int solutionCount = -1;
     private ChessBoard solution;
     
     public QueenBoard(final int size) {
-        this.size = size;
         delegate = new NQueens(size);
     }
     
