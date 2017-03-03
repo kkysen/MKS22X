@@ -112,8 +112,14 @@ public abstract class AbstractMaze {
         startI = tempStartI;
         startJ = tempStartJ;
         
+        System.out.println(Size.of(maze));
+        
         iMoves = new int[maxLength];
         jMoves = new int[maxLength];
+    }
+    
+    protected boolean isVeryBig() {
+        return false;
     }
     
     private static char[][] readAsCharMatrix(final Path path) throws IOException {
@@ -176,6 +182,9 @@ public abstract class AbstractMaze {
     public final boolean anyPath() {
         if (solved) {
             return true;
+        }
+        if (unsolveable) {
+            return false;
         }
         if (findAnyPath()) {
             //maze[startI][startJ] = START;

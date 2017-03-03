@@ -23,6 +23,10 @@ public class IterativeMaze extends AbstractMaze {
     
     @Override
     protected boolean findAnyPath() {
+        if (isVeryBig()) {
+            return findAnyPathForBigMaze();
+        }
+        
         // allow Hotspot to remove animate checks b/c final var
         final boolean localAnimate = animate;
         
@@ -95,8 +99,11 @@ public class IterativeMaze extends AbstractMaze {
         for (int c = 0; c < moveNum; c++) {
             maze[iStack[c]][jStack[c]] = PATH;
         }
-        printMemoryStats();
         return wasSolved;
+    }
+    
+    protected boolean findAnyPathForBigMaze() {
+        return false;
     }
     
     @Override
