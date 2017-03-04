@@ -37,13 +37,26 @@ public class CowTraveling {
         scanner.close();
         
         scanner = new Scanner(lines.get(N + offset));
-        startI = scanner.nextInt();
-        startJ = scanner.nextInt();
-        endI = scanner.nextInt();
-        endJ = scanner.nextInt();
+        startI = scanner.nextInt() - 1;
+        startJ = scanner.nextInt() - 1;
+        endI = scanner.nextInt() - 1;
+        endJ = scanner.nextInt() - 1;
         scanner.close();
         
-        maze = new GraphMaze(N, M, new GraphMaze.Input() {
+        maze = new GraphMaze(new GraphMaze.Input() {
+            
+            private final int height = lines.size() - 2;
+            private final int width = lines.get(1).length();
+            
+            @Override
+            public int getHeight() {
+                return height;
+            }
+            
+            @Override
+            public int getWidth() {
+                return width;
+            }
             
             @Override
             public List<String> getLines() {
@@ -58,14 +71,21 @@ public class CowTraveling {
         });
     }
     
-    public int numWalks() {
+    public long numWalks() {
         return maze.numWalks(T, startI, startJ, endI, endJ);
     }
     
     public static void main(final String[] args) throws IOException {
         final Path path = Paths.get("USACO", "cowTraveling2.txt");
         final CowTraveling problem = new CowTraveling(path);
-        System.out.println("\n# walks: " + problem.numWalks());
+        try {
+            System.out.println("# walks: " + problem.numWalks());
+        } catch (final OutOfMemoryError e) {
+            System.in.read();
+            throw e;
+        }
+        System.out.println(SparseMatrix.seconds);
+        System.in.read();
     }
     
 }

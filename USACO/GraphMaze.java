@@ -1,3 +1,7 @@
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -6,7 +10,7 @@ import java.util.List;
  * 
  * @author Khyber Sen
  */
-public class GraphMaze extends Graph {
+public class GraphMaze implements Graph {
     
     protected static final int NUM_MOVES = 4;
     protected static final int[] I_MOVES = {1, -1, 0, 0};
@@ -21,7 +25,13 @@ public class GraphMaze extends Graph {
     
     protected final char[][] maze;
     
+    protected final AdjacencyMatrix adjacencyMatrix;
+    
     public interface Input {
+        
+        public int getHeight();
+        
+        public int getWidth();
         
         public List<String> getLines();
         
@@ -29,12 +39,55 @@ public class GraphMaze extends Graph {
         
     }
     
-    protected GraphMaze(final int m, final int n, final Input in) {
-        super(m * n);
+    private GraphMaze(final int m, final int n, final List<String> lines, final int offset) {
         this.m = m;
         this.n = n;
         maze = new char[m + 2][n + 2];
-        fillMaze(in.getLines(), in.getOffset());
+        fillMaze(lines, offset);
+        adjacencyMatrix = new AdjacencyMatrix(this);
+    }
+    
+    @Override
+    public int size() {
+        return m * n;
+    }
+    
+    public GraphMaze(final Input input) {
+        this(input.getHeight(), input.getWidth(), input.getLines(), input.getOffset());
+    }
+    
+    private static Input pathToInput(final Path path) throws IOException {
+        final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        final int m = lines.size();
+        final int n = lines.get(0).length();
+        
+        return new Input() {
+            
+            @Override
+            public int getHeight() {
+                return m;
+            }
+            
+            @Override
+            public int getWidth() {
+                return n;
+            }
+            
+            @Override
+            public List<String> getLines() {
+                return lines;
+            }
+            
+            @Override
+            public int getOffset() {
+                return 0;
+            }
+            
+        };
+    }
+    
+    public GraphMaze(final Path path) throws IOException {
+        this(pathToInput(path));
     }
     
     private void fillMaze(final List<String> lines, final int offset) {
@@ -58,7 +111,7 @@ public class GraphMaze extends Graph {
         return i * n + j;
     }
     
-    private void fillVertex(final int r, final int c) {
+    private void fillVertex(final long[][] adjacencyMatrix, final int r, final int c) {
         // r, c in maze; i, j in matrix
         for (int k = 0; k < NUM_MOVES; k++) {
             final int adjR = r + I_MOVES[k];
@@ -73,11 +126,10 @@ public class GraphMaze extends Graph {
     }
     
     @Override
-    protected void fillAdjacencyMatrix() {
-        printMaze(maze);
+    public void fillAdjacencyMatrix(final long[][] adjacencyMatrix) {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
-                fillVertex(i, j);
+                fillVertex(adjacencyMatrix, i, j);
             }
         }
         //reflectMatrixOverDiagonal(adjacencyMatrix);
@@ -92,11 +144,11 @@ public class GraphMaze extends Graph {
         }
     }
     
-    public int numWalks(final int length, final int startI, final int startJ, final int endI,
+    public long numWalks(final int length, final int startI, final int startJ, final int endI,
             final int endJ) {
         final int startVertex = matrixIndex(startI, startJ);
         final int endVertex = matrixIndex(endI, endJ);
-        return numWalks(length, startVertex, endVertex);
+        return adjacencyMatrix.numWalks(length, startVertex, endVertex);
     }
     
 }
