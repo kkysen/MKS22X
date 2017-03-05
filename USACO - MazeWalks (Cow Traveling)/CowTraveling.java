@@ -13,6 +13,24 @@ import java.util.Scanner;
  */
 public class CowTraveling {
     
+    /**
+     * If optimized, it will only consider the part of the maze that may be part
+     * of a walk of the given length between the two points.
+     * 
+     * Therefore, all the other positions/vertices in the maze won't have their
+     * number of walks calculated in the adjacency matrix power. Walks of
+     * shorter length will still be cached.
+     * 
+     * If not optimized, the entire maze will going into the adjacency matrix
+     * and the entire, huge matrix will be exponentiated. This is expensive in
+     * both time and memory, the latter of which will require the cached
+     * matrices to be compressed.
+     * 
+     * However, this will cache everything: all the
+     * number of walks between any two positions in the maze of any length < T.
+     */
+    private static final boolean OPTIMIZE_BOUNDARY = true;
+    
     private final int N; // rows
     private final int M; // cols
     
@@ -61,7 +79,7 @@ public class CowTraveling {
         final int minJ = Math.min(startJ, endJ) - extraDist;
         final int maxJ = Math.max(startJ, endJ) + extraDist;
         
-        if (1 == 1) {
+        if (OPTIMIZE_BOUNDARY) {
             iLowBound = minI < 0 ? 0 : minI;
             iHighBound = maxI > N ? N : maxI;
             jLowBound = minJ < 0 ? 0 : minJ;
@@ -103,19 +121,27 @@ public class CowTraveling {
         });
     }
     
-    public long numWalks() {
-        return maze.numWalks(T, startI - iLowBound, startJ - jLowBound, endI - iLowBound,
+    public long numWalksOfShorterLength(final int length) {
+        if (length > T) {
+            throw new IllegalArgumentException("not computed yet");
+        }
+        return maze.numWalks(length, startI - iLowBound, startJ - jLowBound, endI - iLowBound,
                 endJ - jLowBound);
     }
     
+    public long numWalks() {
+        return numWalksOfShorterLength(T);
+    }
+    
     public static void main(final String[] args) throws IOException {
-        final Path path = Paths.get("USACO - MazeWalks (Cow Traveling)", "cowTraveling4.txt");
+        final Path path = Paths.get("USACO - MazeWalks (Cow Traveling)", "cowTraveling3.txt");
         final CowTraveling problem = new CowTraveling(path);
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
         System.out.println(SparseMatrix.seconds);
         //System.in.read();
         System.out.println((System.currentTimeMillis() - start) / 1000.0 + " sec");
+        System.out.println(problem.numWalksOfShorterLength(11));
     }
     
 }
