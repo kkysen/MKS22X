@@ -31,6 +31,10 @@ public class AdjacencyMatrix {
         }
         
         private void addNoMemCheck(final long[][] adjacencyMatrixPower) {
+            //            int estimatedNumNonZeros = 10000 * (2 + nextPower * (nextPower + 1));
+            //            System.out.println("power: " + nextPower);
+            //            System.out.println("estimate: " + estimatedNumNonZeros);
+            //            estimatedNumNonZeros = -1;
             adjacencyMatrixPowers.add(new SparseMatrix(adjacencyMatrixPower));
             nextPower++;
         }
