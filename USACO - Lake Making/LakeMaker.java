@@ -129,6 +129,7 @@ public class LakeMaker {
     
     public static void main(final String[] args) throws IOException {
         final Path dir = Paths.get("USACO - Lake Making", "tests");
+        int testNum = 0;
         for (final Path inPath : Files.newDirectoryStream(dir, new Filter<Path>() {
             
             @Override
@@ -141,9 +142,11 @@ public class LakeMaker {
             final String outFileName = inFileName.substring(0, inFileName.lastIndexOf('.') + 1)
                     + "out";
             final Path outPath = dir.resolve(outFileName);
+            System.out.println("test # " + ++testNum);
             if (!test(inPath, outPath)) {
                 throw new AssertionError(inPath.toString());
             }
+            System.out.println();
         }
     }
     

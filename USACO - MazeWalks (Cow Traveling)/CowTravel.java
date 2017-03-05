@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,7 +12,7 @@ import java.util.Scanner;
  * 
  * @author Khyber Sen
  */
-public class CowTraveling {
+public class CowTravel {
     
     /**
      * If optimized, it will only consider the part of the maze that may be part
@@ -50,7 +51,7 @@ public class CowTraveling {
     
     private final GraphMaze maze;
     
-    public CowTraveling(final Path path) throws IOException {
+    public CowTravel(final Path path) throws IOException {
         final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         final int offset = 1; // num lines before maze starts
         
@@ -133,15 +134,41 @@ public class CowTraveling {
         return numWalksOfShorterLength(T);
     }
     
-    public static void main(final String[] args) throws IOException {
-        final Path path = Paths.get("USACO - MazeWalks (Cow Traveling)", "cowTraveling3.txt");
-        final CowTraveling problem = new CowTraveling(path);
+    public static boolean test(final Path inPath, final Path outPath) throws IOException {
+        final CowTravel problem = new CowTravel(inPath);
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
         System.out.println(SparseMatrix.seconds);
         //System.in.read();
         System.out.println((System.currentTimeMillis() - start) / 1000.0 + " sec");
-        System.out.println(problem.numWalksOfShorterLength(11));
+        //System.out.println(problem.numWalksOfShorterLength(11));
+        
+        final int answer = Integer.parseInt(new String(Files.readAllBytes(outPath)).trim());
+        System.out.println(problem.numWalks() + " should be " + answer);
+        return problem.numWalks() == answer;
+    }
+    
+    public static void main(final String[] args) throws IOException {
+        final Path dir = Paths.get("USACO - MazeWalks (Cow Traveling)", "tests");
+        int testNum = 0;
+        for (final Path inPath : Files.newDirectoryStream(dir, new Filter<Path>() {
+            
+            @Override
+            public boolean accept(final Path path) {
+                return path.toString().endsWith(".in");
+            }
+            
+        })) {
+            final String inFileName = inPath.getFileName().toString();
+            final String outFileName = inFileName.substring(0, inFileName.lastIndexOf('.') + 1)
+                    + "out";
+            final Path outPath = dir.resolve(outFileName);
+            System.out.println("test # " + ++testNum);
+            if (!test(inPath, outPath)) {
+                throw new AssertionError(inPath.toString());
+            }
+            System.out.println();
+        }
     }
     
 }
