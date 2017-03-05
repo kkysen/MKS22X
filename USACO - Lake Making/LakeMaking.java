@@ -11,7 +11,7 @@ import java.util.Scanner;
  * 
  * @author Khyber Sen
  */
-public class LakeMaker {
+public class LakeMaking {
     
     private final int SQUARE_AREA = 6 * 6 * 12 * 12; // inches (6' x 6')
     private final int STOMP_HEIGHT = 3;
@@ -23,7 +23,7 @@ public class LakeMaker {
     private final int[][] instructions;
     private final int lakeElevation;
     
-    public LakeMaker(final Path path) throws IOException {
+    public LakeMaking(final Path path) throws IOException {
         final Scanner scanner = new Scanner(path);
         height = scanner.nextInt();
         width = scanner.nextInt();
@@ -120,7 +120,7 @@ public class LakeMaker {
     }
     
     public static boolean test(final Path inPath, final Path outPath) throws IOException {
-        final LakeMaker lakeMaker = new LakeMaker(inPath);
+        final LakeMaking lakeMaker = new LakeMaking(inPath);
         final int answer = Integer.parseInt(new String(Files.readAllBytes(outPath)).trim());
         final int volume = lakeMaker.lakeVolume();
         System.out.println(volume + " should be " + answer);

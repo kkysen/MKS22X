@@ -13,9 +13,9 @@ hs_err_pid*
 
 *.gitignore
 
-04MazeSolver/biggerMaze.dat
-04MazeSolver/generatedMaze.dat
-04MazeSolver/solvedGeneratedMaze.dat
-bin/biggerMaze.dat
-bin/generatedMaze.dat
-bin/solvedGeneratedMaze.dat
+04MazeSolver/tests/biggerMaze.dat
+04MazeSolver/tests/generatedMaze.dat
+04MazeSolver/tests/solvedGeneratedMaze.dat
+bin/tests/biggerMaze.dat
+bin/tests/generatedMaze.dat
+bin/tests/solvedGeneratedMaze.dat

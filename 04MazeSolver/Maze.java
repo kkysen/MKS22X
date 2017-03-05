@@ -45,10 +45,10 @@ public class Maze {
     }
     
     public static void main(final String[] args) {
-        final Maze f = new Maze("04MazeSolver/biggerMaze.dat");//true animates the maze.
+        final Maze f = new Maze("04MazeSolver/tests/unsolveableMaze.dat");
         final long start = System.nanoTime();
         //f.setAnimate(true);
-        f.solve();
+        System.out.println(f.solve());
         final double seconds = (System.nanoTime() - start) / 1e9;
         //System.out.println(f);
         System.out.println(seconds + " sec");

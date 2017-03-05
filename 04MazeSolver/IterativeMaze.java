@@ -128,11 +128,11 @@ public class IterativeMaze extends AbstractMaze {
             System.in.read();
             throw e;
         }
-        maze.save(Paths.get("04MazeSolver/generatedMaze.dat"));
+        maze.save(Paths.get("04MazeSolver/tests/generatedMaze.dat"));
         final long start = System.nanoTime();
         System.out.println(maze.anyPath());
         final double seconds = (System.nanoTime() - start) / 1e9;
-        maze.save(Paths.get("04MazeSolver/solvedGeneratedMaze.dat"));
+        maze.save(Paths.get("04MazeSolver/tests/solvedGeneratedMaze.dat"));
         System.out.println(seconds + " sec");
     }
     

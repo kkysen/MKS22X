@@ -108,11 +108,11 @@ public abstract class AbstractMaze {
             unsolveable = true;
         }
         
-        maxLength = emptyCount;
+        maxLength = emptyCount + 2; // 1 for uncounted S and E (not sure if E is needed, but just being safe)
         startI = tempStartI;
         startJ = tempStartJ;
         
-        System.out.println(Size.of(maze));
+        //System.out.println(Size.of(maze));
         
         iMoves = new int[maxLength];
         jMoves = new int[maxLength];

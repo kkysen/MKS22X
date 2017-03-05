@@ -12,7 +12,7 @@ import java.util.Scanner;
  * 
  * @author Khyber Sen
  */
-public class CowTravel {
+public class CowTraveling {
     
     /**
      * If optimized, it will only consider the part of the maze that may be part
@@ -51,7 +51,7 @@ public class CowTravel {
     
     private final GraphMaze maze;
     
-    public CowTravel(final Path path) throws IOException {
+    public CowTraveling(final Path path) throws IOException {
         final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         final int offset = 1; // num lines before maze starts
         
@@ -135,7 +135,7 @@ public class CowTravel {
     }
     
     public static boolean test(final Path inPath, final Path outPath) throws IOException {
-        final CowTravel problem = new CowTravel(inPath);
+        final CowTraveling problem = new CowTraveling(inPath);
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
         System.out.println(SparseMatrix.seconds);
