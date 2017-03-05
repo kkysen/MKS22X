@@ -33,17 +33,44 @@ public class GraphMaze implements Graph {
         
         public int getWidth();
         
-        public List<String> getLines();
+        public int getVerticalOffset();
         
-        public int getOffset();
+        public int getHorizontalOffset();
+        
+        public List<String> getLines();
         
     }
     
-    private GraphMaze(final int m, final int n, final List<String> lines, final int offset) {
+    private GraphMaze(final int m, final int n, final List<String> lines, final int vertOffset,
+            final int horizOffset) {
         this.m = m;
         this.n = n;
         maze = new char[m + 2][n + 2];
-        fillMaze(lines, offset);
+        fillMaze(lines, vertOffset, horizOffset);
+        
+        //        final int T = 16;
+        //        final int startI = 1;
+        //        final int startJ = 3;
+        //
+        //        final int endI = 1;
+        //        final int endJ = 5;
+        //
+        //        for (int i = 0; i < maze.length; i++) {
+        //            for (int j = 0; j < maze[i].length; j++) {
+        //                final int dyStart = Math.abs(i - startI);
+        //                final int dxStart = Math.abs(j - startJ);
+        //                final int dyEnd = Math.abs(i - endI);
+        //                final int dxEnd = Math.abs(j - endJ);
+        //                if (dyStart + dxStart + dyEnd + dxEnd <= T) {
+        //                    maze[i][j] = '#';
+        //                }
+        //            }
+        //        }
+        //        maze[startI][startJ] = 'S';
+        //        maze[endI][endJ] = 'E';
+        //
+        //        printMaze(maze);
+        
         adjacencyMatrix = new AdjacencyMatrix(this);
     }
     
@@ -53,7 +80,8 @@ public class GraphMaze implements Graph {
     }
     
     public GraphMaze(final Input input) {
-        this(input.getHeight(), input.getWidth(), input.getLines(), input.getOffset());
+        this(input.getHeight(), input.getWidth(), input.getLines(), input.getVerticalOffset(),
+                input.getHorizontalOffset());
     }
     
     private static Input pathToInput(final Path path) throws IOException {
@@ -74,13 +102,18 @@ public class GraphMaze implements Graph {
             }
             
             @Override
-            public List<String> getLines() {
-                return lines;
+            public int getVerticalOffset() {
+                return 0;
             }
             
             @Override
-            public int getOffset() {
+            public int getHorizontalOffset() {
                 return 0;
+            }
+            
+            @Override
+            public List<String> getLines() {
+                return lines;
             }
             
         };
@@ -90,11 +123,11 @@ public class GraphMaze implements Graph {
         this(pathToInput(path));
     }
     
-    private void fillMaze(final List<String> lines, final int offset) {
+    private void fillMaze(final List<String> lines, final int vertOffset, final int horizOffset) {
         for (int i = 0; i < m; i++) {
-            final char[] src = lines.get(i + offset).toCharArray();
+            final char[] src = lines.get(i + vertOffset).toCharArray();
             final char[] row = maze[i + 1];
-            System.arraycopy(src, 0, row, 1, src.length);
+            System.arraycopy(src, horizOffset, row, 1, n);
             row[0] = row[n + 1] = WALL;
         }
         Arrays.fill(maze[0], WALL);
