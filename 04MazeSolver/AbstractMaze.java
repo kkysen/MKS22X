@@ -142,15 +142,15 @@ public abstract class AbstractMaze {
         final char[][] maze = new char[m][n];
         final char[] row = new char[n];
         Arrays.fill(row, ' ');
-        row[0] = row[n - 1] = '#';
+        row[0] = row[n - 1] = WALL;
         for (int i = 1; i < m - 1; i++) {
             maze[i] = row.clone();
         }
-        Arrays.fill(row, '#');
+        Arrays.fill(row, WALL);
         maze[0] = row.clone();
         maze[m - 1] = row.clone();
-        maze[1][1] = 'S';
-        maze[m - 2][n - 2] = 'E';
+        maze[1][1] = START;
+        maze[m - 2][n - 2] = END;
         return maze;
     }
     

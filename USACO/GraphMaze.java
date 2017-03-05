@@ -125,9 +125,8 @@ public class GraphMaze implements Graph {
     
     private void fillMaze(final List<String> lines, final int vertOffset, final int horizOffset) {
         for (int i = 0; i < m; i++) {
-            final char[] src = lines.get(i + vertOffset).toCharArray();
             final char[] row = maze[i + 1];
-            System.arraycopy(src, horizOffset, row, 1, n);
+            lines.get(i + vertOffset).getChars(horizOffset, horizOffset + n, row, 1);
             row[0] = row[n + 1] = WALL;
         }
         Arrays.fill(maze[0], WALL);

@@ -106,6 +106,7 @@ public class IterativeMaze extends AbstractMaze {
         return false;
     }
     
+    @Deprecated
     @Override
     protected boolean aStarPath() {
         return false;

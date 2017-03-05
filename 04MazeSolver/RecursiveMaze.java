@@ -55,6 +55,7 @@ public class RecursiveMaze extends AbstractMaze {
         return solved;
     }
     
+    @Deprecated
     @Override
     protected boolean aStarPath() {
         final PriorityQueue<Object> openSet = new PriorityQueue<>();

@@ -10,6 +10,7 @@ import java.nio.channels.FileChannel.MapMode;
  * 
  * @author Khyber Sen
  */
+@Deprecated
 public class MemoryMappedIntList {
     
     private static final int DEFAULT_BUFFER_SIZE = 1_000_000;

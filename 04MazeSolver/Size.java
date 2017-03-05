@@ -5,6 +5,7 @@ import java.lang.instrument.Instrumentation;
  * 
  * @author Khyber Sen
  */
+@Deprecated
 public class Size {
     
     private static Instrumentation instrumentation;
