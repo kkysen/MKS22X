@@ -109,7 +109,7 @@ public class CowTraveling {
     }
     
     public static void main(final String[] args) throws IOException {
-        final Path path = Paths.get("USACO", "cowTraveling2.txt");
+        final Path path = Paths.get("USACO - MazeWalks (Cow Traveling)", "cowTraveling4.txt");
         final CowTraveling problem = new CowTraveling(path);
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
