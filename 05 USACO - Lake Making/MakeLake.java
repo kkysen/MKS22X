@@ -11,7 +11,7 @@ import java.util.Scanner;
  * 
  * @author Khyber Sen
  */
-public class LakeMake {
+public class MakeLake {
     
     private final int SQUARE_AREA = 6 * 6 * 12 * 12; // inches (6' x 6')
     private final int STOMP_HEIGHT = 3;
@@ -23,8 +23,7 @@ public class LakeMake {
     private final int[][] instructions;
     private final int lakeElevation;
     
-    public LakeMake(final Path path) throws IOException {
-        final Scanner scanner = new Scanner(path);
+    private MakeLake(final Scanner scanner) {
         height = scanner.nextInt();
         width = scanner.nextInt();
         elevations = new int[height][width];
@@ -44,6 +43,24 @@ public class LakeMake {
             scanner.nextLine();
         }
         scanner.close();
+    }
+    
+    public MakeLake(final Path path) throws IOException {
+        this(new Scanner(path));
+    }
+    
+    private static Scanner createScanner(final Path path) {
+        try {
+            return new Scanner(path);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+            return null;
+        }
+    }
+    
+    public MakeLake(final String fileName) {
+        this(createScanner(Paths.get(fileName)));
     }
     
     private void stomp(final int row, final int col, final int depth) {
@@ -120,7 +137,7 @@ public class LakeMake {
     }
     
     public static boolean test(final Path inPath, final Path outPath) throws IOException {
-        final LakeMake lakeMaker = new LakeMake(inPath);
+        final MakeLake lakeMaker = new MakeLake(inPath);
         final int answer = Integer.parseInt(new String(Files.readAllBytes(outPath)).trim());
         final int volume = lakeMaker.lakeVolume();
         System.out.println(volume + " should be " + answer);
@@ -128,7 +145,7 @@ public class LakeMake {
     }
     
     public static void main(final String[] args) throws IOException {
-        final Path dir = Paths.get("USACO - Lake Making", "tests");
+        final Path dir = Paths.get("05 USACO - Lake Making", "tests");
         int testNum = 0;
         for (final Path inPath : Files.newDirectoryStream(dir, new Filter<Path>() {
             

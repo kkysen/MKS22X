@@ -53,8 +53,7 @@ public class CowTravel {
     
     private final CowTravelDynamically dynamicProgrammingSolution;
     
-    public CowTravel(final Path path) throws IOException {
-        final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+    private CowTravel(final List<String> lines) {
         final int offset = 1; // num lines before maze starts
         
         Scanner scanner = new Scanner(lines.get(0));
@@ -130,6 +129,24 @@ public class CowTravel {
         
         dynamicProgrammingSolution = new CowTravelDynamically(charMaze, N, M, T, startI, startJ,
                 endI, endJ);
+    }
+    
+    public CowTravel(final Path path) throws IOException {
+        this(Files.readAllLines(path, StandardCharsets.UTF_8));
+    }
+    
+    private static List<String> readLines(final Path path) {
+        try {
+            return Files.readAllLines(path, StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+            return null;
+        }
+    }
+    
+    public CowTravel(final String fileName) {
+        this(readLines(Paths.get(fileName)));
     }
     
     public long numWalksOfShorterLength(final int length) {

@@ -15,49 +15,50 @@ public class CowTravelDynamically {
     
     private final char[][] maze;
     
-    private final int m;
-    private final int n;
+    private final int height;
+    private final int width;
     private final int length;
     
-    private final int r1;
-    private final int c1;
+    private final int startI;
+    private final int startJ;
     
-    private final int r2;
-    private final int c2;
+    private final int endI;
+    private final int endJ;
     
     private final int[][][] cache;
     
-    public CowTravelDynamically(final char[][] maze, final int m, final int n, final int length,
-            final int r1, final int c1, final int r2, final int c2) {
+    public CowTravelDynamically(final char[][] maze, final int height, final int width,
+            final int length,
+            final int startI, final int startJ, final int endI, final int endJ) {
         this.maze = maze;
-        this.m = m;
-        this.n = n;
+        this.height = height;
+        this.width = width;
         this.length = length;
-        this.r1 = r1;
-        this.c1 = c1;
-        this.r2 = r2;
-        this.c2 = c2;
-        cache = new int[m][n][length + 1];
+        this.startI = startI;
+        this.startJ = startJ;
+        this.endI = endI;
+        this.endJ = endJ;
+        cache = new int[height][width][length + 1];
     }
     
     private boolean isValidMove(final int i, final int j) {
-        return i >= 0 && j >= 0 && i < m && j < n && maze[i][j] != WALL;
+        return i >= 0 && j >= 0 && i < height && j < width && maze[i][j] != WALL;
     }
     
     private void search() {
-        cache[r1][c1][0] = 1;
+        cache[startI][startJ][0] = 1;
         for (int t = 1; t <= length; t++) {
-            for (int i = 0; i < m; i++) {
-                for (int j = 0; j < n; j++) {
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
                     cache[i][j][t] = 0;
                     if (maze[i][j] == WALL) {
                         continue;
                     }
                     for (int k = 0; k < NUM_MOVES; k++) {
-                        final int nextI = i + I_MOVES[k];
-                        final int nextJ = j + J_MOVES[k];
-                        if (isValidMove(nextI, nextJ)) {
-                            cache[i][j][t] += cache[nextI][nextJ][t - 1];
+                        final int prevI = i + I_MOVES[k];
+                        final int prevJ = j + J_MOVES[k];
+                        if (isValidMove(prevI, prevJ)) {
+                            cache[i][j][t] += cache[prevI][prevJ][t - 1];
                         }
                     }
                 }
@@ -67,7 +68,7 @@ public class CowTravelDynamically {
     
     public long numWalks() {
         search();
-        return cache[r2][c2][length];
+        return cache[endI][endJ][length];
     }
     
 }
