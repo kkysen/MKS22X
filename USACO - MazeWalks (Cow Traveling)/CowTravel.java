@@ -12,7 +12,7 @@ import java.util.Scanner;
  * 
  * @author Khyber Sen
  */
-public class CowTraveling {
+public class CowTravel {
     
     /**
      * If optimized, it will only consider the part of the maze that may be part
@@ -51,7 +51,9 @@ public class CowTraveling {
     
     private final GraphMaze maze;
     
-    public CowTraveling(final Path path) throws IOException {
+    private final CowTravelDynamically dynamicProgrammingSolution;
+    
+    public CowTravel(final Path path) throws IOException {
         final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         final int offset = 1; // num lines before maze starts
         
@@ -120,6 +122,14 @@ public class CowTraveling {
             }
             
         });
+        
+        final char[][] charMaze = new char[N][M];
+        for (int i = 0; i < N; i++) {
+            charMaze[i] = lines.get(i + offset).toCharArray();
+        }
+        
+        dynamicProgrammingSolution = new CowTravelDynamically(charMaze, N, M, T, startI, startJ,
+                endI, endJ);
     }
     
     public long numWalksOfShorterLength(final int length) {
@@ -131,11 +141,12 @@ public class CowTraveling {
     }
     
     public long numWalks() {
-        return numWalksOfShorterLength(T);
+        //return numWalksOfShorterLength(T);
+        return dynamicProgrammingSolution.numWalks();
     }
     
     public static boolean test(final Path inPath, final Path outPath) throws IOException {
-        final CowTraveling problem = new CowTraveling(inPath);
+        final CowTravel problem = new CowTravel(inPath);
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
         System.out.println(SparseMatrix.seconds);
