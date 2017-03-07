@@ -177,7 +177,7 @@ public class CowTravel {
     }
     
     public static void main(final String[] args) throws IOException {
-        final Path dir = Paths.get("USACO - MazeWalks (Cow Traveling)", "tests");
+        final Path dir = Paths.get("05USACO", "cowTravelingTests");
         int testNum = 0;
         for (final Path inPath : Files.newDirectoryStream(dir, new Filter<Path>() {
             

@@ -145,7 +145,7 @@ public class MakeLake {
     }
     
     public static void main(final String[] args) throws IOException {
-        final Path dir = Paths.get("05 USACO - Lake Making", "tests");
+        final Path dir = Paths.get("05USACO", "lakeMakingTests");
         int testNum = 0;
         for (final Path inPath : Files.newDirectoryStream(dir, new Filter<Path>() {
             
