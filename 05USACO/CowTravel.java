@@ -4,6 +4,7 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,6 +14,8 @@ import java.util.Scanner;
  * @author Khyber Sen
  */
 public class CowTravel {
+    
+    private static final List<GraphMaze> mazes = new ArrayList<>();
     
     /**
      * If optimized, it will only consider the part of the maze that may be part
@@ -30,7 +33,11 @@ public class CowTravel {
      * However, this will cache everything: all the
      * number of walks between any two positions in the maze of any length < T.
      */
-    private static final boolean OPTIMIZE_BOUNDARY = true;
+    private static final boolean OPTIMIZE_BOUNDARY = false;
+    
+    private static final boolean USE_ADJACENCY_MATRIX_EXPONENTIATION = false;
+    
+    private static final boolean PAUSE = false;
     
     private final int N; // rows
     private final int M; // cols
@@ -158,12 +165,18 @@ public class CowTravel {
     }
     
     public long numWalks() {
-        //return numWalksOfShorterLength(T);
-        return dynamicProgrammingSolution.numWalks();
+        System.out.println(N + "x" + M + "x" + T);
+        if (USE_ADJACENCY_MATRIX_EXPONENTIATION) {
+            return numWalksOfShorterLength(T);
+        } else {
+            return dynamicProgrammingSolution.numWalks();
+        }
     }
     
     public static boolean test(final Path inPath, final Path outPath) throws IOException {
         final CowTravel problem = new CowTravel(inPath);
+        mazes.add(problem.maze);
+        SparseMatrix.seconds = 0;
         final long start = System.currentTimeMillis();
         System.out.println("# walks: " + problem.numWalks());
         System.out.println(SparseMatrix.seconds);
@@ -196,6 +209,13 @@ public class CowTravel {
                 throw new AssertionError(inPath.toString());
             }
             System.out.println();
+        }
+        if (PAUSE) {
+            try {
+                System.in.read();
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
         }
     }
     
