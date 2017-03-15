@@ -7,7 +7,8 @@ import java.util.Arrays;
  */
 public class MergeSort {
     
-    private static final int INSERTION_THRESHOLD = 7;
+    private static final int L1_CACHE_BLOCK_SIZE = 64 * 8; // bits
+    private static final int INT_ARRAY_BLOCK_SIZE = L1_CACHE_BLOCK_SIZE / Integer.SIZE;
     
     private static void swap(final int[] a, final int i, final int j) {
         final int temp = a[i];
@@ -15,28 +16,29 @@ public class MergeSort {
         a[j] = temp;
     }
     
-    private static void mergeSort(final int[] src, final int[] dest, final int from, final int to,
-            final int offset) {
-        final int length = to - from;
-        
-        if (length < INSERTION_THRESHOLD) {
-            for (int i = from; i < to; i++) {
-                for (int j = i; j > from && dest[j - 1] > dest[j]; j--) {
-                    swap(dest, j, j - 1);
-                }
+    // fastest sort if short length and cache locality is high
+    private static void insertionSort(final int[] a, final int from, final int to) {
+        for (int i = from; i < to; i++) {
+            for (int j = i; j > from && a[j - 1] > a[j]; j--) {
+                swap(a, j, j - 1);
             }
-            return;
         }
-        
-    }
-    
-    private static void mergeSort(final int[] a, final int from, final int to) {
-        final int[] copy = Arrays.copyOfRange(a, from, to);
-        mergeSort(copy, a, from, to, -from);
     }
     
     private static void mergeSort(final int[] a) {
-        mergeSort(a, 0, a.length);
+        final int numFullBlocks = a.length / INT_ARRAY_BLOCK_SIZE;
+        final int length = numFullBlocks * INT_ARRAY_BLOCK_SIZE;
+        // sort all blocks using insertion sort first
+        for (int i = 0; i < numFullBlocks;) {
+            insertionSort(a, i * INT_ARRAY_BLOCK_SIZE, ++i * INT_ARRAY_BLOCK_SIZE);
+        }
+        
+        // merge these sorted blocks of same size
+        final int[] b = Arrays.copyOf(a, length);
+        
+        // sort and insert last, cut-off block
+        insertionSort(a, numFullBlocks * INT_ARRAY_BLOCK_SIZE, a.length);
+        
     }
     
 }
