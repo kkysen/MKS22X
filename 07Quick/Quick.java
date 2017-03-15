@@ -40,7 +40,7 @@ public class Quick {
         swap(a, low, pivotIndex);
         while (true) {
             while (a[++i] < pivot && i != high) {}
-            while (a[--j] > pivot && j != low) {}
+            while (a[--j] > pivot) {}
             if (i >= j) {
                 break;
             }
@@ -78,12 +78,57 @@ public class Quick {
         return a[sortedIndex];
     }
     
-    public static int[] quickSelectSort(final int[] a) {
-        final int[] b = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            b[i] = quickselect(a, i);
+    private static final int INSERTION_SORT_THRESHOLD = 7;
+    
+    private static void insertionSort(final int[] a, final int low, final int high) {
+        for (int i = low; i < high; i++) {
+            for (int j = i; j > low && a[j - 1] > a[j]; j--) {
+                swap(a, j, j - 1);
+            }
         }
-        return b;
+    }
+    
+    private static void sort(final int[] a, final int low, final int high) {
+        if (high - low < INSERTION_SORT_THRESHOLD) {
+            insertionSort(a, low, high + 1);
+        }
+        
+        if (high <= low) {
+            return;
+        }
+        final int pivot = a[low];
+        int i = low;
+        int j = high + 1;
+        while (true) {
+            while (a[++i] < pivot && i != high) {}
+            while (a[--j] > pivot) {}
+            if (i >= j) {
+                break;
+            }
+            swap(a, i, j);
+        }
+        swap(a, j, low);
+        sort(a, low, j - 1);
+        sort(a, j + 1, high);
+    }
+    
+    private static void shuffle(final int[] a) {
+        final Random random = ThreadLocalRandom.current();
+        for (int i = a.length; i > 1; i--) {
+            swap(a, i - 1, random.nextInt(i));
+        }
+    }
+    
+    public static void sort(final int[] a) {
+        shuffle(a);
+        sort(a, 0, a.length - 1);
+    }
+    
+    public static void quickSelectSort(final int[] a) {
+        final int[] b = a.clone();
+        for (int i = 0; i < a.length; i++) {
+            a[i] = quickselect(b, i);
+        }
     }
     
     private static final int CONSOLE_LIMIT = 4000;
@@ -103,16 +148,17 @@ public class Quick {
         System.out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
         Arrays.sort(b);
-        final int[] c = quickSelectSort(a);
-        System.out.println("quickselect: " + arrayToString(c));
+        quickSelectSort(a);
+        //sort(a);
+        System.out.println("quickselect: " + arrayToString(a));
         System.out.println("quicksorted: " + arrayToString(b));
-        if (!Arrays.equals(c, b)) {
+        if (!Arrays.equals(a, b)) {
             new AssertionError().printStackTrace();
         }
     }
     
     public static void main(final String[] args) {
-        sortTest(10000);
+        sortTest(1000000);
     }
     
 }
