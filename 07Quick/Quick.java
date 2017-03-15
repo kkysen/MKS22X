@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 
  * @author Khyber Sen
  */
-public class Sorts {
+public class Quick {
     
     private static void swap(final int[] a, final int i, final int j) {
         final int temp = a[i];
@@ -35,11 +35,15 @@ public class Sorts {
         return i;
     }
     
-    public static void partition(final int[] a, final int pivotIndex) {
-        partition(a, 0, a.length - 1, pivotIndex);
+    public static int partition(final int[] a, final int pivotIndex) {
+        return partition(a, 0, a.length - 1, pivotIndex);
     }
     
-    public static int kthSmallest(final int[] a, final int k) {
+    public static int part(final int[] a, final int start, final int end) {
+        return partition(a, start, end, ThreadLocalRandom.current().nextInt(start, end));
+    }
+    
+    public static int quickselect(final int[] a, final int k) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         int sortedIndex = -1;
         int low = 0;
@@ -93,7 +97,7 @@ public class Sorts {
         partition(a, 6);
         System.out.println(Arrays.toString(a));
         for (int i = 0; i < b.length; i++) {
-            System.out.println(kthSmallest(b, i));
+            System.out.println(quickselect(b, i));
         }
     }
     
