@@ -15,25 +15,26 @@ public class Quiz2Redux {
     
     public static ArrayList<String> combinations(final String s) {
         final ArrayList<String> words = new ArrayList<>(1 << s.length());
-        help(s, words, s.length() - 1, "");
+        help(s, words, 0, "");
         Collections.sort(words);
         return words;
     }
     
     private static void help(final String s, final List<String> words, final int i,
             final String sub) {
-        if (i == -1) {
+        if (i == s.length()) {
             words.add(sub);
             return;
         }
-        help(s, words, i - 1, sub);
-        help(s, words, i - 1, sub + s.charAt(i));
+        help(s, words, i + 1, sub);
+        help(s, words, i + 1, sub + s.charAt(i));
     }
     
     public static void main(final String[] args) {
-        final long start = System.currentTimeMillis();
-        System.out.println(combinations("abcdefghijklmnopqrst").size());
-        System.out.println((System.currentTimeMillis() - start) / 1e4);
+        //        final long start = System.currentTimeMillis();
+        //        System.out.println(combinations("abcdefghijklmnopqrst").size());
+        //        System.out.println((System.currentTimeMillis() - start) / 1e4);
+        System.out.println(combinations("abcd"));
     }
     
 }
