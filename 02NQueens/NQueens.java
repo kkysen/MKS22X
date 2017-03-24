@@ -236,7 +236,7 @@ public class NQueens {
         //firstSolutionTest(35);
         //allSolutionsTest(16, false);
         //allSolutionsTest(8, true);
-        for (int n = 0; n <= 18; n++) {
+        for (int n = 0; n <= 19; n++) {
             System.out.println("n = " + n);
             numSolutionsTest(n);
             System.out.println();

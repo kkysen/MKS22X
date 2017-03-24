@@ -88,12 +88,9 @@ public class Quick {
         }
     }
     
-    private static void sort(final int[] a, final int low, final int high) {
+    private static void quickSort(final int[] a, final int low, final int high) {
         if (high - low < INSERTION_SORT_THRESHOLD) {
             insertionSort(a, low, high + 1);
-        }
-        
-        if (high <= low) {
             return;
         }
         final int pivot = a[low];
@@ -108,8 +105,71 @@ public class Quick {
             swap(a, i, j);
         }
         swap(a, j, low);
-        sort(a, low, j - 1);
-        sort(a, j + 1, high);
+        if (low == 0 && high == a.length - 1) {
+            System.out.println(j);
+        }
+        quickSort(a, low, j - 1);
+        quickSort(a, j + 1, high);
+    }
+    
+    /*
+     * Dutch National Flag
+     *
+     *   left part    center part              right part
+     * +-------------------------------------------------+
+     * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+     * +-------------------------------------------------+
+     *              ^              ^        ^
+     *              |              |        |
+     *             less            i      great
+     *
+     * Invariants:
+     *
+     *   all in (left, less)   < pivot
+     *   all in [less, i)     == pivot
+     *   all in (great, right) > pivot
+     *
+     * Pointer i is the first index of ?-part.
+     */
+    private static void quickSortThreeWay(final int[] a, final int left, final int right) {
+        if (right - left < INSERTION_SORT_THRESHOLD) {
+            insertionSort(a, left, right + 1);
+            return;
+        }
+        
+        int less = left + 1;
+        int great = right;
+        final int pivot = a[left];
+        
+        for (int i = less; i <= great; i++) {
+            if (a[i] == pivot) {
+                continue;
+            }
+            final int ai = a[i];
+            if (ai < pivot) { // Move a[i] to left part
+                a[i] = a[less];
+                a[less] = ai;
+                less++;
+            } else { // a[k] > pivot - Move a[i] to right part
+                while (a[great] > pivot) {
+                    great--;
+                }
+                if (a[great] < pivot) { // a[great] <= pivot
+                    a[i] = a[less];
+                    a[less] = a[great];
+                    less++;
+                } else { // a[great] == pivot
+                    a[i] = pivot;
+                }
+                a[great] = ai;
+                great--;
+            }
+        }
+        swap(a, left, less);
+        quickSortThreeWay(a, left, less == 0 ? 0 : left + 1);
+        quickSortThreeWay(a, great == right ? right : right - 1, right);
+        //        quickSortThreeWay(a, left, less + 1);
+        //        quickSortThreeWay(a, great - 1, right);
     }
     
     private static void shuffle(final int[] a) {
@@ -119,9 +179,9 @@ public class Quick {
         }
     }
     
-    public static void sort(final int[] a) {
+    public static void quicksort(final int[] a) {
         shuffle(a);
-        sort(a, 0, a.length - 1);
+        quickSortThreeWay(a, 0, a.length - 1);
     }
     
     public static void quickSelectSort(final int[] a) {
@@ -143,22 +203,30 @@ public class Quick {
         //random.setSeed(123456789);
         final int[] a = new int[n];
         for (int i = 0; i < n; i++) {
-            a[i] = random.nextInt();
+            a[i] = random.nextInt(100);
         }
         System.out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
+        System.out.println();
+        final long start0 = System.nanoTime();
         Arrays.sort(b);
-        quickSelectSort(a);
-        //sort(a);
-        System.out.println("quickselect: " + arrayToString(a));
-        System.out.println("quicksorted: " + arrayToString(b));
+        final long time0 = System.nanoTime() - start0;
+        System.out.println(time0 / 1e9 + " sec");
+        System.out.println("Arrays.sort: " + arrayToString(b));
+        System.out.println();
+        final long start1 = System.nanoTime();
+        //quickSelectSort(a);
+        quicksort(a);
+        final long time1 = System.nanoTime() - start1;
+        System.out.println(time1 / 1e9 + " sec");
+        System.out.println("quicksorted: " + arrayToString(a));
         if (!Arrays.equals(a, b)) {
             new AssertionError().printStackTrace();
         }
     }
     
     public static void main(final String[] args) {
-        sortTest(1000000);
+        sortTest(10);
     }
     
 }
