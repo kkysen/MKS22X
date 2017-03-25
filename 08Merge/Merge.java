@@ -1,3 +1,4 @@
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -12,7 +13,7 @@ public class Merge {
     
     private static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
     
-    private static final int PARALLEL_THRESHOLD = 100000000;
+    private static final int PARALLEL_THRESHOLD = Integer.MAX_VALUE;
     
     private static void swap(final int[] a, final int i, final int j) {
         final int temp = a[i];
@@ -108,32 +109,56 @@ public class Merge {
         return s.length() < CONSOLE_LIMIT ? s : s.substring(0, CONSOLE_LIMIT);
     }
     
-    public static void main(final String[] args) {
-        final int n = 1000000;
+    private static void test(final int n, final PrintStream out) {
         final Random random = new Random();
         //random.setSeed(123456789);
         final int[] a = new int[n];
         for (int i = 0; i < n; i++) {
-            a[i] = random.nextInt(1000);
+            a[i] = random.nextInt();
         }
-        System.out.println("original: " + arrayToString(a));
+        //out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
-        System.out.println();
+        final int[] c = a.clone();
+        out.println();
         final long start0 = System.nanoTime();
-        Arrays.sort(b);
+        Arrays.sort(a);
         final long time0 = System.nanoTime() - start0;
-        System.out.println(time0 / 1e9 + " sec");
-        System.out.println("Arrays.sort: " + arrayToString(b));
-        System.out.println();
+        out.println("Arrays.sort: " + time0 / 1e9 + " sec");
+        //out.println("Arrays.sort: " + arrayToString(a));
+        out.println();
+        
         final long start1 = System.nanoTime();
-        //quickSelectSort(a);
-        mergesort(a);
+        mergesort(b);
         final long time1 = System.nanoTime() - start1;
-        System.out.println(time1 / 1e9 + " sec");
-        System.out.println("mergesorted: " + arrayToString(a));
-        if (!Arrays.equals(a, b)) {
+        out.println("mergesorted: " + time1 / 1e9 + " sec");
+        //out.println("mergesorted: " + arrayToString(b));
+        out.println();
+        
+        final long start2 = System.nanoTime();
+        Quick.quicksort(c);
+        final long time2 = System.nanoTime() - start2;
+        out.println("quicksorted: " + time2 / 1e9 + " sec");
+        //out.println("quicksorted: " + arrayToString(c));
+        if (!Arrays.equals(b, a)) {
             new AssertionError().printStackTrace();
         }
+    }
+    
+    private static final PrintStream nullOut = new PrintStream(new NullOutputStream());
+    
+    private static void test(final int n, final boolean print) {
+        test(n, print ? System.out : nullOut);
+    }
+    
+    public static void test(final int n) {
+        for (int i = 0; i < 3; i++) {
+            test(n, false);
+        }
+        test(n, true);
+    }
+    
+    public static void main(final String[] args) {
+        test(1000000);
     }
     
 }
