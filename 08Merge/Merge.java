@@ -12,7 +12,7 @@ public class Merge {
     
     private static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
     
-    private static final int PARALLEL_THRESHOLD = 1000;
+    private static final int PARALLEL_THRESHOLD = 100000000;
     
     private static void swap(final int[] a, final int i, final int j) {
         final int temp = a[i];
@@ -66,32 +66,39 @@ public class Merge {
     // WARNING: Do not debug multi-threaded code.  It crashed Eclipse.
     private static void mergeSortParallel(final int[] src, final int[] dest, final int low,
             final int high, final int offset, final int numCoresAvailable) {
-        if (numCoresAvailable == 0) {
+        if (numCoresAvailable <= 1) {
             mergeSort(src, dest, low, high, offset);
             return;
         }
-        new Thread(new Runnable() {
+        final int numCoresRemaining = numCoresAvailable / 2;
+        final Thread thread = new Thread(new Runnable() {
             
             @Override
             public void run() {
                 final int mid = low + high >>> 1;
                 final int srcLow = low + offset;
                 final int srcHigh = high + offset;
-                mergeSortParallel(dest, src, srcLow, mid, -offset, numCoresAvailable - 1);
-                mergeSortParallel(dest, src, mid, srcHigh, -offset, numCoresAvailable - 2);
+                mergeSortParallel(dest, src, srcLow, mid, -offset, numCoresRemaining);
+                mergeSortParallel(dest, src, mid, srcHigh, -offset, numCoresRemaining);
                 merge(src, dest, srcLow, mid, srcHigh, low, high);
             }
             
-        }).start();
+        });
+        System.out.println("starting new thread");
+        thread.start();
+        try {
+            thread.join();
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     public static void mergesort(final int[] a) {
-        mergeSort(a.clone(), a, 0, a.length, 0);
-        //        if (a.length < PARALLEL_THRESHOLD) {
-        //            mergeSort(a.clone(), a, 0, a.length, 0);
-        //        } else {
-        //            mergeSortParallel(a.clone(), a, 0, a.length, 0, NUM_CORES);
-        //        }
+        if (a.length < PARALLEL_THRESHOLD) {
+            mergeSort(a.clone(), a, 0, a.length, 0);
+        } else {
+            mergeSortParallel(a.clone(), a, 0, a.length, 0, NUM_CORES);
+        }
     }
     
     private static final int CONSOLE_LIMIT = 4000;
@@ -102,12 +109,12 @@ public class Merge {
     }
     
     public static void main(final String[] args) {
-        final int n = 10000;
+        final int n = 1000000;
         final Random random = new Random();
-        random.setSeed(123456789);
+        //random.setSeed(123456789);
         final int[] a = new int[n];
         for (int i = 0; i < n; i++) {
-            a[i] = random.nextInt();
+            a[i] = random.nextInt(1000);
         }
         System.out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
@@ -123,7 +130,7 @@ public class Merge {
         mergesort(a);
         final long time1 = System.nanoTime() - start1;
         System.out.println(time1 / 1e9 + " sec");
-        System.out.println("quicksorted: " + arrayToString(a));
+        System.out.println("mergesorted: " + arrayToString(a));
         if (!Arrays.equals(a, b)) {
             new AssertionError().printStackTrace();
         }

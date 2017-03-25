@@ -78,7 +78,7 @@ public class Quick {
         return a[sortedIndex];
     }
     
-    private static final int INSERTION_SORT_THRESHOLD = 7;
+    private static final int INSERTION_SORT_THRESHOLD = 47; // taken from DualPivotQuicksort
     
     private static void insertionSort(final int[] a, final int low, final int high) {
         for (int i = low; i < high; i++) {
@@ -88,7 +88,7 @@ public class Quick {
         }
     }
     
-    private static void quickSort(final int[] a, final int low, final int high) {
+    private static void quickSortTwoWay(final int[] a, final int low, final int high) {
         if (high - low < INSERTION_SORT_THRESHOLD) {
             insertionSort(a, low, high + 1);
             return;
@@ -105,71 +105,57 @@ public class Quick {
             swap(a, i, j);
         }
         swap(a, j, low);
-        if (low == 0 && high == a.length - 1) {
-            System.out.println(j);
-        }
-        quickSort(a, low, j - 1);
-        quickSort(a, j + 1, high);
+        quickSortTwoWay(a, low, j - 1);
+        quickSortTwoWay(a, j + 1, high);
     }
     
-    /*
-     * Dutch National Flag
-     *
-     *   left part    center part              right part
-     * +-------------------------------------------------+
-     * |  < pivot  |   == pivot   |     ?    |  > pivot  |
-     * +-------------------------------------------------+
-     *              ^              ^        ^
-     *              |              |        |
-     *             less            i      great
-     *
-     * Invariants:
-     *
-     *   all in (left, less)   < pivot
-     *   all in [less, i)     == pivot
-     *   all in (great, right) > pivot
-     *
-     * Pointer i is the first index of ?-part.
-     */
-    private static void quickSortThreeWay(final int[] a, final int left, final int right) {
-        if (right - left < INSERTION_SORT_THRESHOLD) {
-            insertionSort(a, left, right + 1);
+    private static void quickSortThreeWay(final int[] a, final int low, final int high) {
+        if (high - low < INSERTION_SORT_THRESHOLD) {
+            insertionSort(a, low, high + 1);
             return;
         }
         
-        int less = left + 1;
-        int great = right;
-        final int pivot = a[left];
+        final int pivot = a[low];
         
-        for (int i = less; i <= great; i++) {
-            if (a[i] == pivot) {
-                continue;
+        int i = low;
+        int j = high + 1;
+        
+        // equal to pivot stored behind these pointers
+        int p = low + 1;
+        int q = high;
+        
+        while (true) {
+            while (a[++i] < pivot && i != high) {}
+            while (a[--j] > pivot) {}
+            if (i >= j) {
+                break;
             }
             final int ai = a[i];
-            if (ai < pivot) { // Move a[i] to left part
-                a[i] = a[less];
-                a[less] = ai;
-                less++;
-            } else { // a[k] > pivot - Move a[i] to right part
-                while (a[great] > pivot) {
-                    great--;
-                }
-                if (a[great] < pivot) { // a[great] <= pivot
-                    a[i] = a[less];
-                    a[less] = a[great];
-                    less++;
-                } else { // a[great] == pivot
-                    a[i] = pivot;
-                }
-                a[great] = ai;
-                great--;
+            final int aj = a[j];
+            a[i] = aj;
+            a[j] = ai;
+            if (aj == pivot) {
+                a[i] = a[p];
+                a[p] = pivot;
+                p++;
+            }
+            if (ai == pivot) {
+                a[j] = a[q];
+                a[q] = pivot;
+                q--;
             }
         }
-        swap(a, left, less);
-        quickSortThreeWay(a, left, less == 0 ? 0 : left + 1);
-        quickSortThreeWay(a, great == right ? right : right - 1, right);
-        //        quickSortThreeWay(a, left, less + 1);
-        //        quickSortThreeWay(a, great - 1, right);
+        
+        //System.out.println(p - low + high - q);
+        for (int k = low; k < p; k++, j--) {
+            swap(a, k, j);
+        }
+        for (int k = high; k > q; k--, i++) {
+            swap(a, k, i);
+        }
+        
+        quickSortThreeWay(a, low, j);
+        quickSortThreeWay(a, i, high);
     }
     
     private static void shuffle(final int[] a) {
@@ -199,11 +185,11 @@ public class Quick {
     }
     
     public static void sortTest(final int n) {
-        final Random random = ThreadLocalRandom.current();
+        final Random random = new Random();
         //random.setSeed(123456789);
         final int[] a = new int[n];
         for (int i = 0; i < n; i++) {
-            a[i] = random.nextInt(100);
+            a[i] = random.nextInt();
         }
         System.out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
@@ -226,7 +212,10 @@ public class Quick {
     }
     
     public static void main(final String[] args) {
-        sortTest(10);
+        sortTest(1000000);
+        sortTest(1000000);
+        sortTest(1000000);
+        sortTest(1000000);
     }
     
 }
