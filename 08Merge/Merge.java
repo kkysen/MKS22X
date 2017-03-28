@@ -13,7 +13,7 @@ public class Merge {
     
     private static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
     
-    private static final int PARALLEL_THRESHOLD = Integer.MAX_VALUE;
+    private static final int PARALLEL_THRESHOLD = Integer.MAX_VALUE; // not using parallelism right now
     
     private static void swap(final int[] a, final int i, final int j) {
         final int temp = a[i];
