@@ -51,9 +51,6 @@ public class MyLinkedList extends LinkedList<Integer> {
         theUnsafe.setAccessible(true);
         final Unsafe unsafe = (Unsafe) theUnsafe.get(null);
         System.out.println(unsafe.addressSize());
-        
-        System.out.println(list.subList(3, 7));
-        
     }
     
 }

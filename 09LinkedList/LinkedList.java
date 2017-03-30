@@ -372,7 +372,11 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public void addFirst(final E e) {
-        if (first.prev != null) {
+        if (first == null) {
+            first = last = new Node<>(e, null, null);
+            return;
+        }
+        if (first != null && first.prev != null) {
             addMiddle(first, e);
             return;
         }
@@ -390,14 +394,15 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public void addLast(final E e) {
+        if (last == null) {
+            first = last = new Node<>(e, null, null);
+            return;
+        }
         if (last.next != null) {
             addMiddle(last, e);
             return;
         }
         final Node<E> newLast = new Node<>(e, last, null);
-        if (last == null) {
-            first = last = newLast;
-        }
         last.next = newLast;
         last = newLast;
         size++;
@@ -671,8 +676,8 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         Node<E> prev;
         Node<E> next;
         if (index == size) {
-            next = null;
             prev = last;
+            next = prev.next;
         } else {
             next = getNode(index);
             prev = next.prev;
@@ -874,15 +879,16 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public List<E> subList(final int fromIndex, final int toIndex) {
-        checkIndex(fromIndex);
-        checkIndexForAdd(toIndex);
-        if (fromIndex > toIndex) {
-            throw new IllegalArgumentException("fromIndex cannot be greater than toIndex");
-        }
-        final int subSize = toIndex - fromIndex;
-        final Node<E> subFirst = getNode(fromIndex);
-        final Node<E> subLast = getNodeAfter(subFirst, subSize);
-        return new LinkedList<>(subFirst, subLast, subSize);
+        //        checkIndex(fromIndex);
+        //        checkIndexForAdd(toIndex);
+        //        if (fromIndex > toIndex) {
+        //            throw new IllegalArgumentException("fromIndex cannot be greater than toIndex");
+        //        }
+        //        final int subSize = toIndex - fromIndex;
+        //        final Node<E> subFirst = getNode(fromIndex);
+        //        final Node<E> subLast = getNodeAfter(subFirst, subSize);
+        //        return new LinkedList<>(subFirst, subLast, subSize);
+        throw new UnsupportedOperationException();
     }
     
 }
