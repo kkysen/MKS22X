@@ -1,4 +1,5 @@
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collection;
 
 import sun.misc.Unsafe;
@@ -51,6 +52,9 @@ public class MyLinkedList extends LinkedList<Integer> {
         theUnsafe.setAccessible(true);
         final Unsafe unsafe = (Unsafe) theUnsafe.get(null);
         System.out.println(unsafe.addressSize());
+        
+        System.out.println(new MyLinkedList(Arrays.asList(1, 2, 3)));
+        System.out.println(new MyLinkedList());
     }
     
 }

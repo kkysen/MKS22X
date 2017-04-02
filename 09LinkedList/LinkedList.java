@@ -42,6 +42,12 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     private Node<E> first;
     private Node<E> last;
     
+    /**
+     * @param first starting linked node
+     * @param last ending linked node
+     * @param size size
+     */
+    @SuppressWarnings("unused")
     private LinkedList(final Node<E> first, final Node<E> last, final int size) {
         this.size = size;
         this.first = first;
@@ -677,7 +683,11 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         Node<E> next;
         if (index == size) {
             prev = last;
-            next = prev.next;
+            if (prev == null) {
+                next = null;
+            } else {
+                next = prev.next;
+            }
         } else {
             next = getNode(index);
             prev = next.prev;
@@ -779,6 +789,9 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public String toString() {
+        if (size == 0) {
+            return "[]";
+        }
         final StringBuilder sb = new StringBuilder("[");
         Node<E> node = first;
         for (int i = 0; i < size; i++, node = node.next) {

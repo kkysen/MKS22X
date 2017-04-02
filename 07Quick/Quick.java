@@ -60,6 +60,7 @@ public class Quick {
     
     public static int quickselect(final int[] a, final int k) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
+        random.setSeed(123456789);
         int sortedIndex = -1;
         int low = 0;
         int high = a.length;
@@ -76,6 +77,64 @@ public class Quick {
             }
         }
         return a[sortedIndex];
+    }
+    
+    public static int quickselect3(final int[] a, final int k) {
+        final ThreadLocalRandom random = ThreadLocalRandom.current();
+        random.setSeed(123456789);
+        int low = 0;
+        int high = a.length - 1;
+        while (true) {
+            final int pivotIndex = random.nextInt(low, high + 1);
+            final int pivot = a[pivotIndex];
+            int i = low;
+            int j = high + 1;
+            // equal to pivot stored behind these pointers
+            int p = low + 1;
+            int q = high;
+            swap(a, low, pivotIndex);
+            while (true) {
+                while (a[++i] < pivot && i != high) {}
+                while (a[--j] > pivot) {}
+                if (i >= j) {
+                    break;
+                }
+                final int ai = a[i];
+                final int aj = a[j];
+                a[i] = aj;
+                a[j] = ai;
+                if (aj == pivot) {
+                    a[i] = a[p];
+                    a[p] = pivot;
+                    p++;
+                }
+                if (ai == pivot) {
+                    a[j] = a[q];
+                    a[q] = pivot;
+                    q--;
+                }
+            }
+            if (a[i] == pivot) {
+                i++;
+            }
+            if (a[j] == pivot) {
+                j--;
+            }
+            for (int x = low; x < p; x++, j--) {
+                swap(a, x, j);
+            }
+            for (int x = high; x > q; x--, i++) {
+                swap(a, x, i);
+            }
+            if (k > j && k < i) {
+                return a[j];
+            }
+            if (j < k) {
+                low = i;
+            } else {
+                high = j;
+            }
+        }
     }
     
     private static final int INSERTION_SORT_THRESHOLD = 47; // taken from DualPivotQuicksort
@@ -186,10 +245,10 @@ public class Quick {
     
     public static void sortTest(final int n) {
         final Random random = new Random();
-        //random.setSeed(123456789);
+        random.setSeed(123456789);
         final int[] a = new int[n];
         for (int i = 0; i < n; i++) {
-            a[i] = random.nextInt();
+            a[i] = random.nextInt(10);
         }
         System.out.println("original: " + arrayToString(a));
         final int[] b = a.clone();
@@ -201,8 +260,8 @@ public class Quick {
         System.out.println("Arrays.sort: " + arrayToString(b));
         System.out.println();
         final long start1 = System.nanoTime();
-        //quickSelectSort(a);
-        quicksort(a);
+        quickSelectSort(a);
+        //quicksort(a);
         final long time1 = System.nanoTime() - start1;
         System.out.println(time1 / 1e9 + " sec");
         System.out.println("quicksorted: " + arrayToString(a));
@@ -212,10 +271,10 @@ public class Quick {
     }
     
     public static void main(final String[] args) {
-        sortTest(1000000);
-        sortTest(1000000);
-        sortTest(1000000);
-        sortTest(1000000);
+        sortTest(10000);
+        sortTest(10000);
+        sortTest(10000);
+        sortTest(10000);
     }
     
 }
