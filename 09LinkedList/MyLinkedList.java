@@ -53,8 +53,8 @@ public class MyLinkedList extends LinkedList<Integer> {
         final Unsafe unsafe = (Unsafe) theUnsafe.get(null);
         System.out.println(unsafe.addressSize());
         
-        System.out.println(new MyLinkedList(Arrays.asList(1, 2, 3)));
-        System.out.println(new MyLinkedList());
+        System.out.println(new MyLinkedList(Arrays.asList(1)).remove(0));
+        System.out.println(new MyLinkedList().remove(0));
     }
     
 }

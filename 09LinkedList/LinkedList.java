@@ -84,9 +84,9 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         return size == 0;
     }
     
-    private static void checkIndexForSize(final int index, final int size) {
+    private static final void checkIndexForSize(final int index, final int size) {
         if (index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException("index: " + index + "; size: " + size);
+            throw new IndexOutOfBoundsException("index: " + index + ", size: " + size);
         }
     }
     
@@ -219,19 +219,6 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     }
     
     /**
-     * returns the previous node
-     * 
-     * @param node the node to remove (between the nodes around it)
-     * @return the previous node
-     */
-    private static final <E> Node<E> removeNode(final Node<E> node) {
-        final Node<E> prev = node.prev;
-        prev.next = node.next;
-        clearNode(node);
-        return prev;
-    }
-    
-    /**
      * @see List#clear()
      */
     @Override
@@ -246,7 +233,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         size = 0;
     }
     
-    private Node<E> getNode(final int index) {
+    private final Node<E> getNode(final int index) {
         final int mid = size >>> 1;
         Node<E> node;
         if (index < mid) {
@@ -446,9 +433,19 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         }
     }
     
-    private void removeMiddle(final Node<E> toRemove) {
-        removeNode(toRemove);
+    private final void removeMiddle(final Node<E> node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+        clearNode(node);
         size--;
+    }
+    
+    private final E removeFirstLast() {
+        final E removed = first.value;
+        clearNode(first);
+        first = last = null;
+        size = 0;
+        return removed;
     }
     
     /**
@@ -458,6 +455,9 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public E pollFirst() {
         if (size == 0) {
             return null;
+        }
+        if (first == last) {
+            return removeFirstLast();
         }
         final E removed = first.value;
         if (first.prev != null) {
@@ -479,6 +479,9 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public E pollLast() {
         if (size == 0) {
             return null;
+        }
+        if (first == last) {
+            return removeFirstLast();
         }
         final E removed = last.value;
         if (last.next != null) {
@@ -548,10 +551,10 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public E remove(final int index) {
         checkIndex(index);
         if (index == 0) {
-            removeFirst();
+            return removeFirst();
         }
         if (index == size - 1) {
-            removeFirst();
+            return removeFirst();
         }
         final Node<E> remove = getNode(index);
         final E removed = remove.value;
