@@ -1,6 +1,7 @@
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 
 import sun.misc.Unsafe;
 
@@ -32,6 +33,7 @@ public class MyLinkedList extends LinkedList<Integer> {
         for (int i = 0; i < 10; i++) {
             list.add(i);
         }
+        System.out.println(list.size());
         System.out.println(list);
         list.add(5, 100);
         
@@ -54,7 +56,16 @@ public class MyLinkedList extends LinkedList<Integer> {
         System.out.println(unsafe.addressSize());
         
         System.out.println(new MyLinkedList(Arrays.asList(1)).remove(0));
-        System.out.println(new MyLinkedList().remove(0));
+        //System.out.println(new MyLinkedList().remove(0));
+        
+        System.out.println();
+        System.out.println(list.size());
+        System.out.println(list);
+        final Iterator<Integer> iter = list.descendingIterator();
+        System.out.println(iter.next());
+        System.out.println(iter.next());
+        iter.remove();
+        System.out.println(list);
     }
     
 }

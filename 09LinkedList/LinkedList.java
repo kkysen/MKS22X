@@ -90,11 +90,11 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         }
     }
     
-    private void checkIndex(final int index) {
+    private final void checkIndex(final int index) {
         checkIndexForSize(index, size);
     }
     
-    private void checkIndexForAdd(final int index) {
+    private final void checkIndexForAdd(final int index) {
         checkIndexForSize(index, size + 1);
     }
     
@@ -234,6 +234,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     }
     
     private final Node<E> getNode(final int index) {
+        checkIndex(index);
         final int mid = size >>> 1;
         Node<E> node;
         if (index < mid) {
@@ -311,7 +312,6 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public E get(final int index) {
-        checkIndex(index);
         return getNode(index).value;
     }
     
@@ -320,7 +320,6 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
      */
     @Override
     public E set(final int index, final E element) {
-        checkIndex(index);
         final Node<E> node = getNode(index);
         final E removed = node.value;
         node.value = element;
@@ -367,6 +366,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public void addFirst(final E e) {
         if (first == null) {
             first = last = new Node<>(e, null, null);
+            size++;
             return;
         }
         if (first != null && first.prev != null) {
@@ -389,6 +389,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public void addLast(final E e) {
         if (last == null) {
             first = last = new Node<>(e, null, null);
+            size++;
             return;
         }
         if (last.next != null) {
@@ -544,22 +545,30 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         return removeFirst();
     }
     
+    private final E removeNode(final Node<E> node) {
+        if (node == null) {
+            throw new NoSuchElementException();
+        }
+        if (node == first) {
+            if (node == last) {
+                return removeFirstLast();
+            }
+            return removeFirst();
+        }
+        if (node == last) {
+            return removeLast();
+        }
+        final E removed = node.value;
+        removeMiddle(node);
+        return removed;
+    }
+    
     /**
      * @see List#remove(int)
      */
     @Override
     public E remove(final int index) {
-        checkIndex(index);
-        if (index == 0) {
-            return removeFirst();
-        }
-        if (index == size - 1) {
-            return removeFirst();
-        }
-        final Node<E> remove = getNode(index);
-        final E removed = remove.value;
-        removeMiddle(remove);
-        return removed;
+        return removeNode(getNode(index));
     }
     
     /**
@@ -571,13 +580,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         if (remove == null) {
             return false;
         }
-        if (remove == first) {
-            removeFirst();
-        } else if (remove == last) {
-            removeLast();
-        } else {
-            removeMiddle(remove);
-        }
+        removeNode(remove);
         return true;
     }
     
@@ -587,16 +590,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     @Override
     public boolean removeLastOccurrence(final Object o) {
         final Node<E> remove = getNodeBefore(last, o, size);
-        if (remove == null) {
-            return false;
-        }
-        if (remove == first) {
-            removeFirst();
-        } else if (remove == last) {
-            removeLast();
-        } else {
-            removeMiddle(remove);
-        }
+        removeNode(remove);
         return true;
     }
     
@@ -813,12 +807,13 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public Iterator<E> iterator() {
         return new Iterator<E>() {
             
-            private int size = LinkedList.this.size;
+            private int remaining = size;
             private Node<E> node = first;
+            private Node<E> prev = null;
             
             @Override
             public boolean hasNext() {
-                return size > 0;
+                return remaining > 0;
             }
             
             @Override
@@ -826,15 +821,16 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
                 if (!hasNext()) {
                     throw new IllegalStateException();
                 }
+                prev = node;
                 final E e = node.value;
                 node = node.next;
-                size--;
+                remaining--;
                 return e;
             }
             
             @Override
             public void remove() {
-                throw new UnsupportedOperationException();
+                removeNode(prev);
             }
             
         };
@@ -847,12 +843,13 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
     public Iterator<E> descendingIterator() {
         return new Iterator<E>() {
             
-            private int size = LinkedList.this.size;
+            private int remaining = size;
             private Node<E> node = last;
+            private Node<E> prev = null;
             
             @Override
             public boolean hasNext() {
-                return size > 0;
+                return remaining > 0;
             }
             
             @Override
@@ -860,15 +857,16 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
                 if (!hasNext()) {
                     throw new IllegalStateException();
                 }
+                prev = node;
                 final E e = node.value;
                 node = node.prev;
-                size--;
+                remaining--;
                 return e;
             }
             
             @Override
             public void remove() {
-                throw new UnsupportedOperationException();
+                removeNode(prev);
             }
             
         };
