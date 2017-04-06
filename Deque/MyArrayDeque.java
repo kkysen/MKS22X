@@ -1,29 +1,92 @@
+import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  * 
  * 
  * @author Khyber Sen
+ * @param <E> element type
  */
-public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
+public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, List<E>, Cloneable {
+    
+    private static final int MIN_INITIAL_CAPACITY = 8;
+    
+    private static final int DEFAULT_CAPACITY = 16;
     
     private Object[] elements;
     
-    private int size;
+    private int first = 0;
+    private int last = 0;
+    private int mask; // all 1111s bit mask
     
-    private int first;
-    private int last;
+    // elements.length is a power of 2
+    private final void allocateElements(final int size) {
+        int capacity = MIN_INITIAL_CAPACITY;
+        if (size >= capacity) {
+            capacity = size;
+            capacity |= capacity >>> 1;
+            capacity |= capacity >>> 2;
+            capacity |= capacity >>> 4;
+            capacity |= capacity >>> 8;
+            capacity |= capacity >>> 16;
+            capacity++;
+            
+            if (capacity < 0) {
+                capacity >>>= 1;// Good luck allocating 2 ^ 30 elements
+            }
+        }
+        elements = new Object[capacity];
+        mask = capacity - 1;
+    }
+    
+    private final void doubleCapacity() {
+        final int oldCapacity = elements.length;
+        final int rightLength = oldCapacity - first; // size of right half of array
+        final int newCapacity = oldCapacity << 1;
+        if (newCapacity < 0) {
+            throw new OutOfMemoryError("array size too big");
+        }
+        final Object[] a = new Object[newCapacity];
+        System.arraycopy(elements, first, a, 0, rightLength);
+        System.arraycopy(elements, 0, a, rightLength, first);
+        elements = a;
+        first = 0;
+        last = oldCapacity;
+        mask = newCapacity - 1;
+    }
+    
+    private final void tryDoubleCapacity() {
+        if (first == last) {
+            doubleCapacity();
+        }
+    }
+    
+    public MyArrayDeque() {
+        elements = new Object[DEFAULT_CAPACITY];
+        mask = DEFAULT_CAPACITY - 1;
+    }
+    
+    public MyArrayDeque(final int size) {
+        allocateElements(size);
+    }
+    
+    public MyArrayDeque(final Collection<? extends E> c) {
+        this(c.size());
+        addAll(c);
+    }
     
     /**
      * @see java.util.Deque#size()
      */
     @Override
     public int size() {
-        return size;
+        return last - first & mask;
     }
     
     /**
@@ -31,7 +94,18 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean isEmpty() {
-        return size == 0;
+        return first == last;
+    }
+    
+    private final <T> T[] copyElements(final T[] a) {
+        if (first < last) {
+            System.arraycopy(elements, first, a, 0, size());
+        } else if (first > last) {
+            final int rightLength = elements.length - first;
+            System.arraycopy(elements, first, a, 0, rightLength);
+            System.arraycopy(elements, 0, a, rightLength, last);
+        }
+        return a;
     }
     
     /**
@@ -39,17 +113,19 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public Object[] toArray() {
-        // TODO Auto-generated method stub
-        return null;
+        return copyElements(new Object[size()]);
     }
     
     /**
      * @see java.util.Collection#toArray(java.lang.Object[])
      */
     @Override
-    public <T> T[] toArray(final T[] a) {
-        // TODO Auto-generated method stub
-        return null;
+    public <T> T[] toArray(T[] a) {
+        final int size = size();
+        if (a.length < size) {
+            a = Arrays.copyOf(a, size);
+        }
+        return copyElements(a);
     }
     
     /**
@@ -65,13 +141,25 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
         return true;
     }
     
+    private final boolean addAllUnchecked(final int index, final Object[] a) {
+        
+        return false;
+    }
+    
+    public <T extends E> boolean addAll(final int index, final T[] a) {
+        return addAllUnchecked(index, a);
+    }
+    
+    public <T extends E> boolean addAll(final T[] a) {
+        return addAll(size(), a);
+    }
+    
     /**
      * @see java.util.Collection#addAll(java.util.Collection)
      */
     @Override
     public boolean addAll(final Collection<? extends E> c) {
-        // TODO Auto-generated method stub
-        return false;
+        return addAll(size(), c);
     }
     
     /**
@@ -97,8 +185,13 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public void clear() {
-        // TODO Auto-generated method stub
-        
+        if (first < last) {
+            Arrays.fill(elements, first, last, null);
+        } else if (first > last) {
+            Arrays.fill(elements, first, elements.length, null);
+            Arrays.fill(elements, 0, last, null);
+        }
+        first = last = 0;
     }
     
     /**
@@ -106,7 +199,8 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public void addFirst(final E e) {
-        offerFirst(e);
+        elements[first = first - 1 & mask] = e;
+        tryDoubleCapacity();
     }
     
     /**
@@ -114,7 +208,9 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public void addLast(final E e) {
-        offerLast(e);
+        elements[last] = e;
+        last = last + 1 & mask;
+        tryDoubleCapacity();
     }
     
     /**
@@ -122,8 +218,8 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean offerFirst(final E e) {
-        // TODO Auto-generated method stub
-        return false;
+        addFirst(e);
+        return true;
     }
     
     /**
@@ -131,8 +227,14 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean offerLast(final E e) {
-        // TODO Auto-generated method stub
-        return false;
+        addLast(e);
+        return true;
+    }
+    
+    private final void checkEmpty() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
     }
     
     /**
@@ -140,15 +242,24 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E removeFirst() {
-        return pollFirst();
+        checkEmpty();
+        @SuppressWarnings("unchecked")
+        final E removed = (E) elements[first];
+        elements[first] = null;
+        first = first + 1 & mask;
+        return removed;
     }
     
     /**
      * @see java.util.Deque#removeLast()
      */
+    @SuppressWarnings("unchecked")
     @Override
     public E removeLast() {
-        return pollLast();
+        checkEmpty();
+        final E removed = (E) elements[last = last - 1 & mask];
+        elements[last] = null;
+        return removed;
     }
     
     /**
@@ -156,8 +267,7 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E pollFirst() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -165,26 +275,27 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E pollLast() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
     
     /**
      * @see java.util.Deque#getFirst()
      */
+    @SuppressWarnings("unchecked")
     @Override
     public E getFirst() {
-        // TODO Auto-generated method stub
-        return null;
+        checkEmpty();
+        return (E) elements[first];
     }
     
     /**
      * @see java.util.Deque#getLast()
      */
+    @SuppressWarnings("unchecked")
     @Override
     public E getLast() {
-        // TODO Auto-generated method stub
-        return null;
+        checkEmpty();
+        return (E) elements[last];
     }
     
     /**
@@ -192,8 +303,7 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E peekFirst() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -201,8 +311,7 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E peekLast() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -210,8 +319,12 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean removeFirstOccurrence(final Object o) {
-        // TODO Auto-generated method stub
-        return false;
+        final int i = indexOf(o);
+        if (i == -1) {
+            return false;
+        }
+        remove(i);
+        return true;
     }
     
     /**
@@ -219,8 +332,12 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean removeLastOccurrence(final Object o) {
-        // TODO Auto-generated method stub
-        return false;
+        final int i = lastIndexOf(o);
+        if (i == -1) {
+            return false;
+        }
+        remove(i);
+        return true;
     }
     
     /**
@@ -293,8 +410,7 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean remove(final Object o) {
-        // TODO Auto-generated method stub
-        return false;
+        return removeFirstOccurrence(o);
     }
     
     /**
@@ -302,8 +418,7 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean contains(final Object o) {
-        // TODO Auto-generated method stub
-        return false;
+        return indexOf(o) != -1;
     }
     
     /**
@@ -311,8 +426,27 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public Iterator<E> iterator() {
-        // TODO Auto-generated method stub
-        return null;
+        return new Iterator<E>() {
+            
+            @Override
+            public boolean hasNext() {
+                // TODO Auto-generated method stub
+                return false;
+            }
+            
+            @Override
+            public E next() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+            
+            @Override
+            public void remove() {
+                // TODO Auto-generated method stub
+                
+            }
+            
+        };
     }
     
     /**
@@ -320,8 +454,41 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public Iterator<E> descendingIterator() {
-        // TODO Auto-generated method stub
-        return null;
+        return new Iterator<E>() {
+            
+            @Override
+            public boolean hasNext() {
+                // TODO Auto-generated method stub
+                return false;
+            }
+            
+            @Override
+            public E next() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+            
+            @Override
+            public void remove() {
+                // TODO Auto-generated method stub
+                
+            }
+            
+        };
+    }
+    
+    private static final void checkIndexForSize(final int index, final int size) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("index: " + index + ", size: " + size);
+        }
+    }
+    
+    private final void checkIndex(final int index) {
+        checkIndexForSize(index, size());
+    }
+    
+    private final void checkIndexForAdd(final int index) {
+        checkIndexForSize(index, size() + 1);
     }
     
     /**
@@ -329,8 +496,8 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public boolean addAll(final int index, final Collection<? extends E> c) {
-        // TODO Auto-generated method stub
-        return false;
+        checkIndexForAdd(index);
+        return addAllUnchecked(index, c.toArray());
     }
     
     /**
@@ -339,8 +506,8 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
     @SuppressWarnings("unchecked")
     @Override
     public E get(final int index) {
-        // TODO Auto-generated method stub
-        return (E) elements[(first + index) % elements.length];
+        checkIndex(index);
+        return (E) elements[first + index & mask];
     }
     
     /**
@@ -348,8 +515,12 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E set(final int index, final E element) {
-        // TODO Auto-generated method stub
-        return null;
+        checkIndex(index);
+        final int i = first + index & mask;
+        @SuppressWarnings("unchecked")
+        final E removed = (E) elements[i];
+        elements[i] = element;
+        return removed;
     }
     
     /**
@@ -357,7 +528,38 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public void add(final int index, final E element) {
-        // TODO Auto-generated method stub
+        if (index == 0) {
+            addFirst(element);
+            return;
+        } else if (index == size()) {
+            addLast(element);
+            return;
+        }
+        
+        checkIndexForAdd(index);
+        final int i = first + index & mask;
+        
+        if (first < last) {
+            System.arraycopy(elements, i, elements, i + 1, last - i);
+            elements[i] = element;
+            last = last + 1 & mask;
+        } else {
+            if (i >= first) {
+                // TODO
+            } else {
+                final Object lastElem = elements[mask];
+                System.arraycopy(elements, first, elements, first + 1, mask - first);
+                System.arraycopy(elements, i, elements, i + 2, mask - i);
+                elements[i + 1] = elements;
+                System.arraycopy(elements, 0, elements, 1, i);
+                elements[0] = lastElem;
+                last++;
+            }
+        }
+        tryDoubleCapacity();
+    }
+    
+    public void removeRange(final int fromIndex, final int toIndex) {
         
     }
     
@@ -366,8 +568,40 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public E remove(final int index) {
-        // TODO Auto-generated method stub
-        return null;
+        checkIndex(index);
+        if (index == 0) {
+            return removeFirst();
+        } else if (index == size()) {
+            return removeLast();
+        }
+        
+        final int i = first + index & mask;
+        
+        if (first < last) {
+            @SuppressWarnings("unchecked")
+            final E removed = (E) elements[i];
+            System.arraycopy(elements, i, elements, i - 1, last - i);
+            last--;
+            elements[last] = null;
+            return removed;
+        }
+        
+        if (i <= first) {
+            // TODO
+        } else {
+            // TODO
+        }
+        
+        System.arraycopy(elements, i + 1, elements, i, mask - i);
+        elements[0] = elements[mask];
+        
+        final Object lastElem = elements[mask];
+        System.arraycopy(elements, first, elements, first + 1, elements.length - first);
+        System.arraycopy(elements, i, elements, i + 2, last - i);
+        elements[i + 1] = elements;
+        System.arraycopy(elements, 0, elements, 1, i);
+        elements[0] = lastElem;
+        last++;
     }
     
     /**
@@ -375,8 +609,48 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public int indexOf(final Object o) {
-        // TODO Auto-generated method stub
-        return 0;
+        final int last = this.last;
+        final Object[] elements = this.elements;
+        if (first < last) {
+            if (o == null) {
+                for (int i = first; i < last; i++) {
+                    if (elements[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = first; i < last; i++) {
+                    if (o.equals(elements[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        } else {
+            if (o == null) {
+                for (int i = first; i < elements.length; i++) {
+                    if (elements[i] == null) {
+                        return i - first;
+                    }
+                }
+                for (int i = 0; i < last; i++) {
+                    if (elements[i] == null) {
+                        return elements.length - first + i;
+                    }
+                }
+            } else {
+                for (int i = first; i < elements.length; i++) {
+                    if (o.equals(elements[i])) {
+                        return i - first;
+                    }
+                }
+                for (int i = 0; i < last; i++) {
+                    if (o.equals(elements[i])) {
+                        return elements.length - first + i;
+                    }
+                }
+            }
+        }
+        return -1;
     }
     
     /**
@@ -384,8 +658,48 @@ public class MyArrayDeque<E> implements Deque<E>, List<E>, Cloneable {
      */
     @Override
     public int lastIndexOf(final Object o) {
-        // TODO Auto-generated method stub
-        return 0;
+        final int first = this.first;
+        final Object[] elements = this.elements;
+        if (first < last) {
+            if (o == null) {
+                for (int i = last; i >= first; i--) {
+                    if (elements[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = last; i >= first; i--) {
+                    if (o.equals(elements[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        } else {
+            if (o == null) {
+                for (int i = last; i >= 0; i--) {
+                    if (elements[i] == null) {
+                        return elements.length - first + i;
+                    }
+                }
+                for (int i = elements.length - 1; i >= first; i--) {
+                    if (elements[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = last; i >= 0; i--) {
+                    if (o.equals(elements[i])) {
+                        return elements.length - first + i;
+                    }
+                }
+                for (int i = elements.length - 1; i >= first; i--) {
+                    if (o.equals(elements[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        }
+        return -1;
     }
     
     /**
