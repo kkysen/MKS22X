@@ -1,4 +1,5 @@
-import java.util.AbstractCollection;
+import java.io.Serializable;
+import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
@@ -6,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.RandomAccess;
 
 /**
  * 
@@ -13,7 +15,52 @@ import java.util.NoSuchElementException;
  * @author Khyber Sen
  * @param <E> element type
  */
-public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, List<E>, Cloneable {
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+/**
+ * 
+ * 
+ * @author Khyber Sen
+ * @param <E>
+ */
+public class MyArrayDeque<E> extends AbstractList<E>
+        implements Deque<E>, List<E>, RandomAccess, Cloneable, Serializable {
+    
+    private static final long serialVersionUID = 2852255322378711691L;
     
     private static final int MIN_INITIAL_CAPACITY = 8;
     
@@ -29,14 +76,11 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     private final void allocateElements(final int size) {
         int capacity = MIN_INITIAL_CAPACITY;
         if (size >= capacity) {
-            capacity = size;
-            capacity |= capacity >>> 1;
-            capacity |= capacity >>> 2;
-            capacity |= capacity >>> 4;
-            capacity |= capacity >>> 8;
-            capacity |= capacity >>> 16;
-            capacity++;
-            
+            final int leadingBitIndex = Integer.SIZE - 1 - Integer.numberOfLeadingZeros(size);
+            capacity = 1 << leadingBitIndex;
+            if (capacity != size) { // size is a power of 2
+                capacity <<= 1;
+            }
             if (capacity < 0) {
                 capacity >>>= 1;// Good luck allocating 2 ^ 30 elements
             }
@@ -82,7 +126,7 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.Deque#size()
+     * @see java.util.AbstractCollection#size()
      */
     @Override
     public int size() {
@@ -90,108 +134,82 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.Collection#isEmpty()
+     * @see java.util.AbstractCollection#isEmpty()
      */
     @Override
     public boolean isEmpty() {
         return first == last;
     }
     
-    private final <T> T[] copyElements(final T[] a) {
-        if (first < last) {
-            System.arraycopy(elements, first, a, 0, size());
-        } else if (first > last) {
-            final int rightLength = elements.length - first;
-            System.arraycopy(elements, first, a, 0, rightLength);
-            System.arraycopy(elements, 0, a, rightLength, last);
+    private final void checkEmpty() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
         }
-        return a;
     }
     
-    /**
-     * @see java.util.Collection#toArray()
-     */
-    @Override
-    public Object[] toArray() {
-        return copyElements(new Object[size()]);
-    }
-    
-    /**
-     * @see java.util.Collection#toArray(java.lang.Object[])
-     */
-    @Override
-    public <T> T[] toArray(T[] a) {
-        final int size = size();
-        if (a.length < size) {
-            a = Arrays.copyOf(a, size);
+    private static final void checkIndexForSize(final int index, final int size) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
         }
-        return copyElements(a);
+    }
+    
+    private final void checkIndex(final int index) {
+        checkIndexForSize(index, size());
+    }
+    
+    private final void checkIndexForAdd(final int index) {
+        checkIndexForSize(index, size() + 1);
     }
     
     /**
-     * @see java.util.Collection#containsAll(java.util.Collection)
+     * @see java.util.Deque#getFirst()
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean containsAll(final Collection<?> c) {
-        for (final Object o : c) {
-            if (!contains(o)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    private final boolean addAllUnchecked(final int index, final Object[] a) {
-        
-        return false;
-    }
-    
-    public <T extends E> boolean addAll(final int index, final T[] a) {
-        return addAllUnchecked(index, a);
-    }
-    
-    public <T extends E> boolean addAll(final T[] a) {
-        return addAll(size(), a);
+    public E getFirst() {
+        checkEmpty();
+        return (E) elements[first];
     }
     
     /**
-     * @see java.util.Collection#addAll(java.util.Collection)
+     * @see java.util.Deque#getLast()
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean addAll(final Collection<? extends E> c) {
-        return addAll(size(), c);
+    public E getLast() {
+        checkEmpty();
+        return (E) elements[last];
     }
     
     /**
-     * @see java.util.Collection#removeAll(java.util.Collection)
+     * @see java.util.Deque#element()
      */
     @Override
-    public boolean removeAll(final Collection<?> c) {
-        // TODO Auto-generated method stub
-        return false;
+    public E element() {
+        return getFirst();
     }
     
     /**
-     * @see java.util.Collection#retainAll(java.util.Collection)
+     * @see java.util.AbstractList#get(int)
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean retainAll(final Collection<?> c) {
-        // TODO Auto-generated method stub
-        return false;
+    public E get(final int index) {
+        checkIndex(index);
+        return (E) elements[first + index & mask];
     }
     
     /**
-     * @see java.util.Collection#clear()
+     * @see java.util.AbstractList#set(int, java.lang.Object)
      */
     @Override
-    public void clear() {
-        if (first < last) {
-            Arrays.fill(elements, first, last, null);
-        } else if (first > last) {
-            Arrays.fill(elements, first, elements.length, null);
-            Arrays.fill(elements, 0, last, null);
-        }
-        first = last = 0;
+    public E set(final int index, final E element) {
+        checkIndex(index);
+        final int i = first + index & mask;
+        @SuppressWarnings("unchecked")
+        final E removed = (E) elements[i];
+        elements[i] = element;
+        return removed;
     }
     
     /**
@@ -231,10 +249,70 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
         return true;
     }
     
-    private final void checkEmpty() {
-        if (isEmpty()) {
-            throw new NoSuchElementException();
+    /**
+     * @see java.util.AbstractList#add(java.lang.Object)
+     */
+    @Override
+    public boolean add(final E e) {
+        addLast(e);
+        return true;
+    }
+    
+    /**
+     * @see java.util.Deque#offer(java.lang.Object)
+     */
+    @Override
+    public boolean offer(final E e) {
+        return offerLast(e);
+    }
+    
+    /**
+     * @see java.util.Deque#push(java.lang.Object)
+     */
+    @Override
+    public void push(final E e) {
+        addFirst(e);
+    }
+    
+    /**
+     * @see java.util.AbstractList#add(int, java.lang.Object)
+     */
+    @Override
+    public void add(final int index, final E element) {
+        if (index == 0) {
+            addFirst(element);
+            return;
+        } else if (index == size()) {
+            addLast(element);
+            return;
         }
+        
+        checkIndexForAdd(index);
+        
+        final Object[] a = elements;
+        final int first = this.first;
+        final int mask = this.mask;
+        
+        final int i = first + index & mask;
+        
+        if (first < last) {
+            System.arraycopy(a, i, a, i + 1, last - i);
+            a[i] = element;
+            last = last + 1 & mask;
+        } else {
+            if (i >= first) {
+                // TODO
+            } else {
+                final Object lastElem = a[mask];
+                System.arraycopy(a, first, a, first + 1, mask - first);
+                System.arraycopy(a, i, a, i + 2, mask - i);
+                a[i + 1] = a;
+                System.arraycopy(a, 0, a, 1, i);
+                a[0] = lastElem;
+                last++;
+            }
+        }
+        tryDoubleCapacity();
     }
     
     /**
@@ -243,10 +321,11 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     @Override
     public E removeFirst() {
         checkEmpty();
+        final int f = first;
         @SuppressWarnings("unchecked")
-        final E removed = (E) elements[first];
-        elements[first] = null;
-        first = first + 1 & mask;
+        final E removed = (E) elements[f];
+        elements[f] = null;
+        first = f + 1 & mask;
         return removed;
     }
     
@@ -263,55 +342,71 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.Deque#pollFirst()
+     * @see java.util.Deque#remove()
      */
     @Override
-    public E pollFirst() {
-        throw new UnsupportedOperationException();
+    public E remove() {
+        return removeFirst();
     }
     
     /**
-     * @see java.util.Deque#pollLast()
+     * @see java.util.Deque#pop()
      */
     @Override
-    public E pollLast() {
-        throw new UnsupportedOperationException();
+    public E pop() {
+        return removeFirst();
     }
     
     /**
-     * @see java.util.Deque#getFirst()
+     * @see java.util.AbstractList#remove(int)
      */
-    @SuppressWarnings("unchecked")
     @Override
-    public E getFirst() {
-        checkEmpty();
-        return (E) elements[first];
+    public E remove(final int index) {
+        checkIndex(index);
+        if (index == 0) {
+            return removeFirst();
+        } else if (index == size()) {
+            return removeLast();
+        }
+        
+        final Object[] a = elements;
+        final int first = this.first;
+        
+        final int i = first + index & mask;
+        
+        if (first < last) {
+            @SuppressWarnings("unchecked")
+            final E removed = (E) a[i];
+            System.arraycopy(a, i, a, i - 1, last - i);
+            last--;
+            a[last] = null;
+            return removed;
+        }
+        
+        if (i <= first) {
+            // TODO
+        } else {
+            // TODO
+        }
+        
+        System.arraycopy(a, i + 1, a, i, mask - i);
+        a[0] = a[mask];
+        
+        final Object lastElem = a[mask];
+        System.arraycopy(a, first, a, first + 1, a.length - first);
+        System.arraycopy(a, i, a, i + 2, last - i);
+        a[i + 1] = a;
+        System.arraycopy(a, 0, a, 1, i);
+        a[0] = lastElem;
+        last++;
     }
     
     /**
-     * @see java.util.Deque#getLast()
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public E getLast() {
-        checkEmpty();
-        return (E) elements[last];
-    }
-    
-    /**
-     * @see java.util.Deque#peekFirst()
+     * @see java.util.AbstractList#removeRange(int, int)
      */
     @Override
-    public E peekFirst() {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * @see java.util.Deque#peekLast()
-     */
-    @Override
-    public E peekLast() {
-        throw new UnsupportedOperationException();
+    public void removeRange(final int fromIndex, final int toIndex) {
+        
     }
     
     /**
@@ -341,72 +436,7 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.Deque#add(java.lang.Object)
-     */
-    @Override
-    public boolean add(final E e) {
-        addLast(e);
-        return true;
-    }
-    
-    /**
-     * @see java.util.Deque#offer(java.lang.Object)
-     */
-    @Override
-    public boolean offer(final E e) {
-        return offerLast(e);
-    }
-    
-    /**
-     * @see java.util.Deque#remove()
-     */
-    @Override
-    public E remove() {
-        return removeFirst();
-    }
-    
-    /**
-     * @see java.util.Deque#poll()
-     */
-    @Override
-    public E poll() {
-        return pollFirst();
-    }
-    
-    /**
-     * @see java.util.Deque#element()
-     */
-    @Override
-    public E element() {
-        return getFirst();
-    }
-    
-    /**
-     * @see java.util.Deque#peek()
-     */
-    @Override
-    public E peek() {
-        return peekFirst();
-    }
-    
-    /**
-     * @see java.util.Deque#push(java.lang.Object)
-     */
-    @Override
-    public void push(final E e) {
-        addFirst(e);
-    }
-    
-    /**
-     * @see java.util.Deque#pop()
-     */
-    @Override
-    public E pop() {
-        return removeFirst();
-    }
-    
-    /**
-     * @see java.util.Deque#remove(java.lang.Object)
+     * @see java.util.AbstractCollection#remove(java.lang.Object)
      */
     @Override
     public boolean remove(final Object o) {
@@ -414,15 +444,210 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.Deque#contains(java.lang.Object)
+     * @see java.util.AbstractList#indexOf(java.lang.Object)
+     */
+    @Override
+    public int indexOf(final Object o) {
+        final int first = this.first;
+        final int last = this.last;
+        final Object[] a = elements;
+        if (first < last) {
+            if (o == null) {
+                for (int i = first; i < last; i++) {
+                    if (a[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = first; i < last; i++) {
+                    if (o.equals(a[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        } else {
+            if (o == null) {
+                for (int i = first; i < a.length; i++) {
+                    if (a[i] == null) {
+                        return i - first;
+                    }
+                }
+                for (int i = 0; i < last; i++) {
+                    if (a[i] == null) {
+                        return a.length - first + i;
+                    }
+                }
+            } else {
+                for (int i = first; i < a.length; i++) {
+                    if (o.equals(a[i])) {
+                        return i - first;
+                    }
+                }
+                for (int i = 0; i < last; i++) {
+                    if (o.equals(a[i])) {
+                        return a.length - first + i;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    
+    /**
+     * @see java.util.AbstractList#lastIndexOf(java.lang.Object)
+     */
+    @Override
+    public int lastIndexOf(final Object o) {
+        final int first = this.first;
+        final Object[] a = this.elements;
+        if (first < last) {
+            if (o == null) {
+                for (int i = last; i >= first; i--) {
+                    if (a[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = last; i >= first; i--) {
+                    if (o.equals(a[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        } else {
+            if (o == null) {
+                for (int i = last; i >= 0; i--) {
+                    if (a[i] == null) {
+                        return a.length - first + i;
+                    }
+                }
+                for (int i = a.length - 1; i >= first; i--) {
+                    if (a[i] == null) {
+                        return i - first;
+                    }
+                }
+            } else {
+                for (int i = last; i >= 0; i--) {
+                    if (o.equals(a[i])) {
+                        return a.length - first + i;
+                    }
+                }
+                for (int i = a.length - 1; i >= first; i--) {
+                    if (o.equals(a[i])) {
+                        return i - first;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    
+    /**
+     * @see java.util.AbstractCollection#contains(java.lang.Object)
      */
     @Override
     public boolean contains(final Object o) {
         return indexOf(o) != -1;
     }
     
+    private final boolean addAllUnchecked(final int index, final Object[] a) {
+        
+        return false;
+    }
+    
+    public <T extends E> boolean addAll(final int index, final T[] a) {
+        return addAllUnchecked(index, a);
+    }
+    
+    public <T extends E> boolean addAll(final T[] a) {
+        return addAll(size(), a);
+    }
+    
     /**
-     * @see java.util.Deque#iterator()
+     * @see java.util.AbstractCollection#addAll(java.util.Collection)
+     */
+    @Override
+    public boolean addAll(final Collection<? extends E> c) {
+        return addAll(size(), c);
+    }
+    
+    /**
+     * @see java.util.AbstractList#addAll(int, java.util.Collection)
+     */
+    @Override
+    public boolean addAll(final int index, final Collection<? extends E> c) {
+        checkIndexForAdd(index);
+        return addAllUnchecked(index, c.toArray());
+    }
+    
+    private final boolean batchRemove(final Collection<?> c, final boolean remove) {
+        // TODO
+        return false;
+    }
+    
+    /**
+     * @see java.util.AbstractCollection#removeAll(java.util.Collection)
+     */
+    @Override
+    public boolean removeAll(final Collection<?> c) {
+        return batchRemove(c, true);
+    }
+    
+    /**
+     * @see java.util.AbstractCollection#retainAll(java.util.Collection)
+     */
+    @Override
+    public boolean retainAll(final Collection<?> c) {
+        return batchRemove(c, false);
+    }
+    
+    private final <T> T[] copyElements(final T[] a) {
+        if (first < last) {
+            System.arraycopy(elements, first, a, 0, size());
+        } else if (first > last) {
+            final int rightLength = elements.length - first;
+            System.arraycopy(elements, first, a, 0, rightLength);
+            System.arraycopy(elements, 0, a, rightLength, last);
+        }
+        return a;
+    }
+    
+    /**
+     * @see java.util.AbstractList#clear()
+     */
+    @Override
+    public void clear() {
+        if (first < last) {
+            Arrays.fill(elements, first, last, null);
+        } else if (first > last) {
+            Arrays.fill(elements, first, elements.length, null);
+            Arrays.fill(elements, 0, last, null);
+        }
+        first = last = 0;
+    }
+    
+    /**
+     * @see java.util.AbstractCollection#toArray()
+     */
+    @Override
+    public Object[] toArray() {
+        return copyElements(new Object[size()]);
+    }
+    
+    /**
+     * @see java.util.AbstractCollection#toArray(java.lang.Object[])
+     */
+    @Override
+    public <T> T[] toArray(T[] a) {
+        final int size = size();
+        if (a.length < size) {
+            a = Arrays.copyOf(a, size);
+        }
+        return copyElements(a);
+    }
+    
+    /**
+     * @see java.util.AbstractList#iterator()
      */
     @Override
     public Iterator<E> iterator() {
@@ -477,233 +702,8 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
         };
     }
     
-    private static final void checkIndexForSize(final int index, final int size) {
-        if (index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException("index: " + index + ", size: " + size);
-        }
-    }
-    
-    private final void checkIndex(final int index) {
-        checkIndexForSize(index, size());
-    }
-    
-    private final void checkIndexForAdd(final int index) {
-        checkIndexForSize(index, size() + 1);
-    }
-    
     /**
-     * @see java.util.List#addAll(int, java.util.Collection)
-     */
-    @Override
-    public boolean addAll(final int index, final Collection<? extends E> c) {
-        checkIndexForAdd(index);
-        return addAllUnchecked(index, c.toArray());
-    }
-    
-    /**
-     * @see java.util.List#get(int)
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public E get(final int index) {
-        checkIndex(index);
-        return (E) elements[first + index & mask];
-    }
-    
-    /**
-     * @see java.util.List#set(int, java.lang.Object)
-     */
-    @Override
-    public E set(final int index, final E element) {
-        checkIndex(index);
-        final int i = first + index & mask;
-        @SuppressWarnings("unchecked")
-        final E removed = (E) elements[i];
-        elements[i] = element;
-        return removed;
-    }
-    
-    /**
-     * @see java.util.List#add(int, java.lang.Object)
-     */
-    @Override
-    public void add(final int index, final E element) {
-        if (index == 0) {
-            addFirst(element);
-            return;
-        } else if (index == size()) {
-            addLast(element);
-            return;
-        }
-        
-        checkIndexForAdd(index);
-        final int i = first + index & mask;
-        
-        if (first < last) {
-            System.arraycopy(elements, i, elements, i + 1, last - i);
-            elements[i] = element;
-            last = last + 1 & mask;
-        } else {
-            if (i >= first) {
-                // TODO
-            } else {
-                final Object lastElem = elements[mask];
-                System.arraycopy(elements, first, elements, first + 1, mask - first);
-                System.arraycopy(elements, i, elements, i + 2, mask - i);
-                elements[i + 1] = elements;
-                System.arraycopy(elements, 0, elements, 1, i);
-                elements[0] = lastElem;
-                last++;
-            }
-        }
-        tryDoubleCapacity();
-    }
-    
-    public void removeRange(final int fromIndex, final int toIndex) {
-        
-    }
-    
-    /**
-     * @see java.util.List#remove(int)
-     */
-    @Override
-    public E remove(final int index) {
-        checkIndex(index);
-        if (index == 0) {
-            return removeFirst();
-        } else if (index == size()) {
-            return removeLast();
-        }
-        
-        final int i = first + index & mask;
-        
-        if (first < last) {
-            @SuppressWarnings("unchecked")
-            final E removed = (E) elements[i];
-            System.arraycopy(elements, i, elements, i - 1, last - i);
-            last--;
-            elements[last] = null;
-            return removed;
-        }
-        
-        if (i <= first) {
-            // TODO
-        } else {
-            // TODO
-        }
-        
-        System.arraycopy(elements, i + 1, elements, i, mask - i);
-        elements[0] = elements[mask];
-        
-        final Object lastElem = elements[mask];
-        System.arraycopy(elements, first, elements, first + 1, elements.length - first);
-        System.arraycopy(elements, i, elements, i + 2, last - i);
-        elements[i + 1] = elements;
-        System.arraycopy(elements, 0, elements, 1, i);
-        elements[0] = lastElem;
-        last++;
-    }
-    
-    /**
-     * @see java.util.List#indexOf(java.lang.Object)
-     */
-    @Override
-    public int indexOf(final Object o) {
-        final int last = this.last;
-        final Object[] elements = this.elements;
-        if (first < last) {
-            if (o == null) {
-                for (int i = first; i < last; i++) {
-                    if (elements[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = first; i < last; i++) {
-                    if (o.equals(elements[i])) {
-                        return i - first;
-                    }
-                }
-            }
-        } else {
-            if (o == null) {
-                for (int i = first; i < elements.length; i++) {
-                    if (elements[i] == null) {
-                        return i - first;
-                    }
-                }
-                for (int i = 0; i < last; i++) {
-                    if (elements[i] == null) {
-                        return elements.length - first + i;
-                    }
-                }
-            } else {
-                for (int i = first; i < elements.length; i++) {
-                    if (o.equals(elements[i])) {
-                        return i - first;
-                    }
-                }
-                for (int i = 0; i < last; i++) {
-                    if (o.equals(elements[i])) {
-                        return elements.length - first + i;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * @see java.util.List#lastIndexOf(java.lang.Object)
-     */
-    @Override
-    public int lastIndexOf(final Object o) {
-        final int first = this.first;
-        final Object[] elements = this.elements;
-        if (first < last) {
-            if (o == null) {
-                for (int i = last; i >= first; i--) {
-                    if (elements[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = last; i >= first; i--) {
-                    if (o.equals(elements[i])) {
-                        return i - first;
-                    }
-                }
-            }
-        } else {
-            if (o == null) {
-                for (int i = last; i >= 0; i--) {
-                    if (elements[i] == null) {
-                        return elements.length - first + i;
-                    }
-                }
-                for (int i = elements.length - 1; i >= first; i--) {
-                    if (elements[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = last; i >= 0; i--) {
-                    if (o.equals(elements[i])) {
-                        return elements.length - first + i;
-                    }
-                }
-                for (int i = elements.length - 1; i >= first; i--) {
-                    if (o.equals(elements[i])) {
-                        return i - first;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * @see java.util.List#listIterator()
+     * @see java.util.AbstractList#listIterator()
      */
     @Override
     public ListIterator<E> listIterator() {
@@ -712,7 +712,7 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.List#listIterator(int)
+     * @see java.util.AbstractList#listIterator(int)
      */
     @Override
     public ListIterator<E> listIterator(final int index) {
@@ -721,12 +721,161 @@ public class MyArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, 
     }
     
     /**
-     * @see java.util.List#subList(int, int)
+     * @see java.util.AbstractList#hashCode()
      */
     @Override
-    public List<E> subList(final int fromIndex, final int toIndex) {
-        // TODO Auto-generated method stub
-        return null;
+    public int hashCode() {
+        int result = 1;
+        final int prime = 31;
+        final Object[] a = this.elements;
+        final int first = this.first;
+        final int last = this.last;
+        if (first < last) {
+            for (int i = first; i < last; i++) {
+                final Object e = a[i];
+                result = prime * result + (e == null ? 0 : e.hashCode());
+            }
+        } else if (first > last) {
+            for (int i = first; i < a.length; i++) {
+                final Object e = a[i];
+                result = prime * result + (e == null ? 0 : e.hashCode());
+            }
+            for (int i = 0; i < a.length; i++) {
+                final Object e = a[i];
+                result = prime * result + (e == null ? 0 : e.hashCode());
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * @see java.util.AbstractList#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof List)) {
+            return false;
+        }
+        
+        final Object[] a = this.elements;
+        final int size = size();
+        final int first = this.first;
+        final int last = this.last;
+        final int mask = this.mask;
+        
+        final List<?> list = (List<?>) obj;
+        if (size != list.size()) {
+            return false;
+        }
+        if (size == 0) {
+            return true;
+        }
+        
+        if (obj instanceof MyArrayDeque) {
+            final MyArrayDeque<?> other = (MyArrayDeque<?>) obj;
+            final Object[] b = other.elements;
+            final int offset = first - other.first;
+            if (first < last) {
+                for (int i = first; i < last; i++) {
+                    if (!a[i].equals(b[i + offset])) {
+                        return false;
+                    }
+                }
+            } else {
+                for (int i = first; i < a.length; i++) {
+                    if (!a[i].equals(b[i + offset & mask])) {
+                        return false;
+                    }
+                }
+                for (int i = 0; i < last; i++) {
+                    if (!a[i].equals(b[i + offset & mask])) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        if (list instanceof RandomAccess) {
+            for (int i = 0; i < size; i++) {
+                if (!a[i + first & mask].equals(list.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        final Iterator<?> iter = list.iterator();
+        if (first < last) {
+            for (int i = first; i < last; i++) {
+                if (!a[i].equals(iter.next())) {
+                    return false;
+                }
+            }
+        } else {
+            for (int i = first; i < a.length; i++) {
+                if (!a[i].equals(iter.next())) {
+                    return false;
+                }
+            }
+            for (int i = 0; i < last; i++) {
+                if (!a[i].equals(iter.next())) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * @see java.util.Deque#pollFirst()
+     */
+    @Override
+    public E pollFirst() {
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * @see java.util.Deque#pollLast()
+     */
+    @Override
+    public E pollLast() {
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * @see java.util.Deque#peekFirst()
+     */
+    @Override
+    public E peekFirst() {
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * @see java.util.Deque#peekLast()
+     */
+    @Override
+    public E peekLast() {
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * @see java.util.Deque#poll()
+     */
+    @Override
+    public E poll() {
+        return pollFirst();
+    }
+    
+    /**
+     * @see java.util.Deque#peek()
+     */
+    @Override
+    public E peek() {
+        return peekFirst();
     }
     
 }
