@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -66,47 +67,55 @@ public class MyArrayDeque<E> extends AbstractList<E>
         first = last = capacity >>> 1;
     }
     
-    private final <T> T[] copyElements(final T[] a) {
+    private final <T> T[] copyElements(final T[] a, final int offset) {
         if (first < last) {
-            System.arraycopy(elements, first, a, 0, size());
+            System.arraycopy(elements, first, a, offset, size());
         } else if (first > last) {
             final int rightLength = elements.length - first;
-            System.arraycopy(elements, first, a, 0, rightLength);
-            System.arraycopy(elements, 0, a, rightLength, last);
+            System.arraycopy(elements, first, a, offset, rightLength);
+            System.arraycopy(elements, 0, a, offset + rightLength, last);
         }
         return a;
     }
     
-    private final void reallocateElements(final int newCapacity, final int size) {
-        final Object[] a = new Object[newCapacity];
-        copyElements(a);
-        // TODO copy elements according to wrapping mode
-        
-        elements = a;
-        mask = newCapacity - 1;
-        
+    private final <T> T[] copyElements(final T[] a) {
+        return copyElements(a, 0);
+    }
+    
+    private final void reallocateElements(final int newCapacity, final int size,
+            final WrappingMode wrappingMode) {
+        final int newFirst;
+        final int newLast;
         switch (wrappingMode) {
             case DEQUE:
                 // center pointers in array to minimize wrapping
                 final int mid = newCapacity >>> 1;
                 final int half = size >>> 1;
-                first = mid - half;
-                last = mid + half;
-                if (last - first != size) {
-                    last++;
-                }
+                newFirst = mid - half;
+                newLast = newFirst + size;
                 break;
             case STACK:
             case QUEUE:
-                last = newCapacity;
-                first = last - size;
+                newLast = newCapacity;
+                newFirst = newLast - size;
                 break;
             case REVERSE_STACK:
             case REVERSE_QUEUE:
-                first = 0;
-                last = size;
+                newFirst = 0;
+                newLast = size;
                 break;
+            default:
+                newFirst = newLast = -1; // can't happen
         }
+        
+        elements = copyElements(new Object[newCapacity], newFirst);
+        first = newFirst;
+        last = newLast;
+        mask = newCapacity - 1;
+    }
+    
+    private final void reallocateElements(final int newCapacity, final int size) {
+        reallocateElements(newCapacity, size, wrappingMode);
     }
     
     private final void doubleCapacity() {
@@ -204,11 +213,11 @@ public class MyArrayDeque<E> extends AbstractList<E>
         }
     }
     
-    private final void checkIndex(final int index) {
+    private final void rangeCheck(final int index) {
         checkIndexForSize(index, size());
     }
     
-    private final void checkIndexForAdd(final int index) {
+    private final void rangeCheckForAdd(final int index) {
         checkIndexForSize(index, size() + 1);
     }
     
@@ -246,7 +255,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
     @SuppressWarnings("unchecked")
     @Override
     public E get(final int index) {
-        checkIndex(index);
+        rangeCheck(index);
         return (E) elements[first + index & mask];
     }
     
@@ -255,7 +264,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
      */
     @Override
     public E set(final int index, final E element) {
-        checkIndex(index);
+        rangeCheck(index);
         final int i = first + index & mask;
         @SuppressWarnings("unchecked")
         final E removed = (E) elements[i];
@@ -338,7 +347,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
             return;
         }
         
-        checkIndexForAdd(index);
+        rangeCheckForAdd(index);
         
         final Object[] a = elements;
         final int first = this.first;
@@ -408,33 +417,25 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return removeFirst();
     }
     
-    /**
-     * @see java.util.AbstractList#remove(int)
-     */
-    @Override
-    public E remove(final int index) {
-        checkIndex(index);
-        if (index == 0) {
-            return removeFirst();
-        } else if (index == size()) {
-            return removeLast();
+    private final boolean delete(final int i) {
+        if (i == 0) {
+            removeFirst();
+            return false;
+        }
+        if (i == size()) {
+            removeLast();
+            return false;
         }
         
         final Object[] a = elements;
         final int first = this.first;
-        
-        final int i = first + index & mask;
+        final int mask = this.mask;
         
         if (first < last) {
-            @SuppressWarnings("unchecked")
-            final E removed = (E) a[i];
             System.arraycopy(a, i, a, i - 1, last - i);
             last--;
             a[last] = null;
-            return removed;
-        }
-        
-        if (i <= first) {
+        } else if (i <= first) {
             // TODO
         } else {
             // TODO
@@ -450,6 +451,21 @@ public class MyArrayDeque<E> extends AbstractList<E>
         System.arraycopy(a, 0, a, 1, i);
         a[0] = lastElem;
         last++;
+        
+        return true;
+    }
+    
+    /**
+     * @see java.util.AbstractList#remove(int)
+     */
+    @Override
+    public E remove(final int index) {
+        rangeCheck(index);
+        final int i = first + index & mask;
+        @SuppressWarnings("unchecked")
+        final E removed = (E) elements[i];
+        delete(index);
+        return removed;
     }
     
     /**
@@ -457,7 +473,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
      */
     @Override
     public void removeRange(final int fromIndex, final int toIndex) {
-        
+        // TODO
     }
     
     /**
@@ -602,7 +618,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
     }
     
     private final boolean addAllUnchecked(final int index, final Object[] a) {
-        
+        // TODO
         return false;
     }
     
@@ -610,7 +626,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return addAllUnchecked(index, a);
     }
     
-    public <T extends E> boolean addAll(final T[] a) {
+    public boolean addAll(final E[] a) {
         return addAll(size(), a);
     }
     
@@ -627,7 +643,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
      */
     @Override
     public boolean addAll(final int index, final Collection<? extends E> c) {
-        checkIndexForAdd(index);
+        rangeCheckForAdd(index);
         return addAllUnchecked(index, c.toArray());
     }
     
@@ -693,22 +709,40 @@ public class MyArrayDeque<E> extends AbstractList<E>
     public Iterator<E> iterator() {
         return new Iterator<E>() {
             
+            int i = first;
+            int last = MyArrayDeque.this.last;
+            int prev = -1;
+            
             @Override
             public boolean hasNext() {
-                // TODO Auto-generated method stub
-                return false;
+                return i != last;
             }
             
             @Override
             public E next() {
-                // TODO Auto-generated method stub
-                return null;
+                if (i == last) {
+                    throw new NoSuchElementException();
+                }
+                @SuppressWarnings("unchecked")
+                final E next = (E) elements[i];
+                if (last != MyArrayDeque.this.last) {
+                    throw new ConcurrentModificationException();
+                }
+                prev = i;
+                i = i + 1 & mask;
+                return next;
             }
             
             @Override
             public void remove() {
-                // TODO Auto-generated method stub
-                
+                if (prev == -1) {
+                    throw new IllegalStateException();
+                }
+                if (delete(prev)) {
+                    i = i - 1 & mask;
+                    last = MyArrayDeque.this.last;
+                }
+                prev = -1;
             }
             
         };
@@ -721,22 +755,39 @@ public class MyArrayDeque<E> extends AbstractList<E>
     public Iterator<E> descendingIterator() {
         return new Iterator<E>() {
             
+            int i = last;
+            int first = MyArrayDeque.this.first;
+            int prev = -1;
+            
             @Override
             public boolean hasNext() {
-                // TODO Auto-generated method stub
-                return false;
+                return i != first;
             }
             
             @Override
             public E next() {
-                // TODO Auto-generated method stub
-                return null;
+                if (i == first) {
+                    throw new NoSuchElementException();
+                }
+                @SuppressWarnings("unchecked")
+                final E next = (E) elements[i = i - 1 & mask];
+                if (first != MyArrayDeque.this.first) {
+                    throw new ConcurrentModificationException();
+                }
+                prev = i;
+                return next;
             }
             
             @Override
             public void remove() {
-                // TODO Auto-generated method stub
-                
+                if (prev == -1) {
+                    throw new IllegalStateException();
+                }
+                if (delete(prev)) {
+                    i = i + 1 & mask;
+                    first = MyArrayDeque.this.first;
+                }
+                prev = -1;
             }
             
         };
