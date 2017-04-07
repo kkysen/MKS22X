@@ -22,7 +22,7 @@ import java.util.RandomAccess;
  * @author Khyber Sen
  * @param <E> element type
  */
-public class MyArrayDeque<E> extends AbstractList<E>
+public class RingBuffer<E> extends AbstractList<E>
         implements Deque<E>, RandomAccess, Cloneable, Serializable {
     
     public enum WrappingMode {
@@ -49,6 +49,25 @@ public class MyArrayDeque<E> extends AbstractList<E>
     private int last = 0;
     private int mask; // all 1111s bit mask
     
+    private final void positionPointersAfterAllocation() {
+        switch (wrappingMode) {
+            case DEQUE:
+                first = elements.length >>> 1;
+                break;
+            case STACK:
+            case QUEUE:
+                first = mask;
+                break;
+            case REVERSE_STACK:
+            case REVERSE_QUEUE:
+                first = 0;
+                break;
+            default:
+                first = -1; // can't happen
+        }
+        last = first;
+    }
+    
     // elements.length is a power of 2
     private final void allocateElements(final int size) {
         int capacity = MIN_INITIAL_CAPACITY;
@@ -64,7 +83,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
         }
         elements = new Object[capacity];
         mask = capacity - 1;
-        first = last = capacity >>> 1;
+        positionPointersAfterAllocation();
     }
     
     private final <T> T[] copyElements(final T[] a, final int offset) {
@@ -96,7 +115,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
                 break;
             case STACK:
             case QUEUE:
-                newLast = newCapacity;
+                newLast = newCapacity - 1;
                 newFirst = newLast - size;
                 break;
             case REVERSE_STACK:
@@ -151,36 +170,37 @@ public class MyArrayDeque<E> extends AbstractList<E>
     private final void initEmpty() {
         elements = new Object[DEFAULT_CAPACITY];
         mask = DEFAULT_CAPACITY - 1;
+        positionPointersAfterAllocation();
     }
     
-    public MyArrayDeque() {
+    public RingBuffer() {
         this(DEFAULT_WRAPPING_MODE);
     }
     
-    public MyArrayDeque(final int size) {
+    public RingBuffer(final int size) {
         this(size, DEFAULT_WRAPPING_MODE);
     }
     
-    public MyArrayDeque(final Collection<? extends E> c) {
+    public RingBuffer(final Collection<? extends E> c) {
         this(c, DEFAULT_WRAPPING_MODE);
     }
     
-    public MyArrayDeque(final WrappingMode wrappingMode) {
+    public RingBuffer(final WrappingMode wrappingMode) {
         this.wrappingMode = wrappingMode;
         initEmpty();
     }
     
-    public MyArrayDeque(final int size, final WrappingMode wrappingMode) {
+    public RingBuffer(final int size, final WrappingMode wrappingMode) {
         this(wrappingMode);
         allocateElements(size);
     }
     
-    public MyArrayDeque(final E[] a, final WrappingMode wrappingMode) {
+    public RingBuffer(final E[] a, final WrappingMode wrappingMode) {
         this(wrappingMode);
         addAll(a);
     }
     
-    public MyArrayDeque(final Collection<? extends E> c, final WrappingMode wrappingMode) {
+    public RingBuffer(final Collection<? extends E> c, final WrappingMode wrappingMode) {
         this(c.size(), wrappingMode);
         addAll(c);
     }
@@ -566,7 +586,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
     @Override
     public int lastIndexOf(final Object o) {
         final int first = this.first;
-        final Object[] a = this.elements;
+        final Object[] a = elements;
         if (first < last) {
             if (o == null) {
                 for (int i = last; i >= first; i--) {
@@ -710,7 +730,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return new Iterator<E>() {
             
             int i = first;
-            int last = MyArrayDeque.this.last;
+            int last = RingBuffer.this.last;
             int prev = -1;
             
             @Override
@@ -725,7 +745,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
                 }
                 @SuppressWarnings("unchecked")
                 final E next = (E) elements[i];
-                if (last != MyArrayDeque.this.last) {
+                if (last != RingBuffer.this.last) {
                     throw new ConcurrentModificationException();
                 }
                 prev = i;
@@ -740,7 +760,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
                 }
                 if (delete(prev)) {
                     i = i - 1 & mask;
-                    last = MyArrayDeque.this.last;
+                    last = RingBuffer.this.last;
                 }
                 prev = -1;
             }
@@ -756,7 +776,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return new Iterator<E>() {
             
             int i = last;
-            int first = MyArrayDeque.this.first;
+            int first = RingBuffer.this.first;
             int prev = -1;
             
             @Override
@@ -771,7 +791,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
                 }
                 @SuppressWarnings("unchecked")
                 final E next = (E) elements[i = i - 1 & mask];
-                if (first != MyArrayDeque.this.first) {
+                if (first != RingBuffer.this.first) {
                     throw new ConcurrentModificationException();
                 }
                 prev = i;
@@ -785,7 +805,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
                 }
                 if (delete(prev)) {
                     i = i + 1 & mask;
-                    first = MyArrayDeque.this.first;
+                    first = RingBuffer.this.first;
                 }
                 prev = -1;
             }
@@ -818,7 +838,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
     public int hashCode() {
         int result = 1;
         final int prime = 31;
-        final Object[] a = this.elements;
+        final Object[] a = elements;
         final int first = this.first;
         final int last = this.last;
         if (first < last) {
@@ -851,7 +871,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
             return false;
         }
         
-        final Object[] a = this.elements;
+        final Object[] a = elements;
         final int size = size();
         final int first = this.first;
         final int last = this.last;
@@ -865,8 +885,8 @@ public class MyArrayDeque<E> extends AbstractList<E>
             return true;
         }
         
-        if (obj instanceof MyArrayDeque) {
-            final MyArrayDeque<?> other = (MyArrayDeque<?>) obj;
+        if (obj instanceof RingBuffer) {
+            final RingBuffer<?> other = (RingBuffer<?>) obj;
             final Object[] b = other.elements;
             final int offset = first - other.first;
             if (first < last) {
@@ -921,10 +941,45 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return true;
     }
     
+    /**
+     * @see java.util.AbstractCollection#toString()
+     */
+    @Override
+    public String toString() {
+        if (first == last) {
+            return "[]";
+        }
+        final Object[] a = elements;
+        final int last = this.last;
+        final StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        if (first < last) {
+            for (int i = first; i < last; i++) {
+                sb.append(a[i].toString());
+                sb.append(',');
+                sb.append(' ');
+            }
+        } else {
+            for (int i = first; i < a.length; i++) {
+                sb.append(a[i].toString());
+                sb.append(',');
+                sb.append(' ');
+            }
+            for (int i = 0; i < last; i++) {
+                sb.append(a[i].toString());
+                sb.append(',');
+                sb.append(' ');
+            }
+        }
+        sb.setCharAt(sb.length() - 2, ']');
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+    
     private final void writeObject(final ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         s.writeInt(size());
-        final Object[] a = this.elements;
+        final Object[] a = elements;
         final int first = this.first;
         final int last = this.last;
         if (first < last) {
@@ -946,7 +1001,7 @@ public class MyArrayDeque<E> extends AbstractList<E>
         s.defaultReadObject();
         final int size = s.readInt();
         allocateElements(size);
-        final Object[] a = this.elements;
+        final Object[] a = elements;
         first = 0;
         last = size;
         for (int i = 0; i < a.length; i++) {
@@ -1000,6 +1055,18 @@ public class MyArrayDeque<E> extends AbstractList<E>
     @Override
     public E peek() {
         return peekFirst();
+    }
+    
+    public static void main(final String[] args) {
+        final RingBuffer<Integer> ring = new RingBuffer<>(1000, WrappingMode.STACK);
+        ring.add(5);
+        ring.add(10);
+        ring.addFirst(0);
+        ring.addFirst(Integer.MAX_VALUE);
+        System.out.println(ring.first);
+        System.out.println(ring.contains(null));
+        System.out.println(ring.contains(10));
+        System.out.println(ring);
     }
     
 }
