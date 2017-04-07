@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
@@ -10,61 +13,34 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 
 /**
+ * A null-containing ArrayDeque like {@link java.util.ArrayDeque} that
+ * implements {@link List} and extends {@link AbstractList}.
  * 
+ * @see java.util.ArrayDeque
  * 
  * @author Khyber Sen
  * @param <E> element type
  */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
-/**
- * 
- * 
- * @author Khyber Sen
- * @param <E>
- */
 public class MyArrayDeque<E> extends AbstractList<E>
-        implements Deque<E>, List<E>, RandomAccess, Cloneable, Serializable {
+        implements Deque<E>, RandomAccess, Cloneable, Serializable {
+    
+    public enum WrappingMode {
+        DEQUE,
+        STACK,
+        REVERSE_STACK,
+        QUEUE,
+        REVERSE_QUEUE;
+    }
     
     private static final long serialVersionUID = 2852255322378711691L;
     
     private static final int MIN_INITIAL_CAPACITY = 8;
     
     private static final int DEFAULT_CAPACITY = 16;
+    
+    private static final WrappingMode DEFAULT_WRAPPING_MODE = WrappingMode.DEQUE;
+    
+    private final WrappingMode wrappingMode;
     
     private Object[] elements;
     
@@ -87,22 +63,59 @@ public class MyArrayDeque<E> extends AbstractList<E>
         }
         elements = new Object[capacity];
         mask = capacity - 1;
+        first = last = capacity >>> 1;
+    }
+    
+    private final <T> T[] copyElements(final T[] a) {
+        if (first < last) {
+            System.arraycopy(elements, first, a, 0, size());
+        } else if (first > last) {
+            final int rightLength = elements.length - first;
+            System.arraycopy(elements, first, a, 0, rightLength);
+            System.arraycopy(elements, 0, a, rightLength, last);
+        }
+        return a;
+    }
+    
+    private final void reallocateElements(final int newCapacity, final int size) {
+        final Object[] a = new Object[newCapacity];
+        copyElements(a);
+        // TODO copy elements according to wrapping mode
+        
+        elements = a;
+        mask = newCapacity - 1;
+        
+        switch (wrappingMode) {
+            case DEQUE:
+                // center pointers in array to minimize wrapping
+                final int mid = newCapacity >>> 1;
+                final int half = size >>> 1;
+                first = mid - half;
+                last = mid + half;
+                if (last - first != size) {
+                    last++;
+                }
+                break;
+            case STACK:
+            case QUEUE:
+                last = newCapacity;
+                first = last - size;
+                break;
+            case REVERSE_STACK:
+            case REVERSE_QUEUE:
+                first = 0;
+                last = size;
+                break;
+        }
     }
     
     private final void doubleCapacity() {
         final int oldCapacity = elements.length;
-        final int rightLength = oldCapacity - first; // size of right half of array
         final int newCapacity = oldCapacity << 1;
         if (newCapacity < 0) {
             throw new OutOfMemoryError("array size too big");
         }
-        final Object[] a = new Object[newCapacity];
-        System.arraycopy(elements, first, a, 0, rightLength);
-        System.arraycopy(elements, 0, a, rightLength, first);
-        elements = a;
-        first = 0;
-        last = oldCapacity;
-        mask = newCapacity - 1;
+        reallocateElements(newCapacity, oldCapacity);
     }
     
     private final void tryDoubleCapacity() {
@@ -111,17 +124,55 @@ public class MyArrayDeque<E> extends AbstractList<E>
         }
     }
     
-    public MyArrayDeque() {
+    /**
+     * trims underlying array to smallest power of 2
+     */
+    public void trimToSize() {
+        final int size = size();
+        int newCapacity = elements.length;
+        while (newCapacity > size) {
+            newCapacity >>>= 1;
+        }
+        if (newCapacity != size) {
+            newCapacity <<= 1;
+        }
+        reallocateElements(newCapacity, size);
+    }
+    
+    private final void initEmpty() {
         elements = new Object[DEFAULT_CAPACITY];
         mask = DEFAULT_CAPACITY - 1;
     }
     
+    public MyArrayDeque() {
+        this(DEFAULT_WRAPPING_MODE);
+    }
+    
     public MyArrayDeque(final int size) {
-        allocateElements(size);
+        this(size, DEFAULT_WRAPPING_MODE);
     }
     
     public MyArrayDeque(final Collection<? extends E> c) {
-        this(c.size());
+        this(c, DEFAULT_WRAPPING_MODE);
+    }
+    
+    public MyArrayDeque(final WrappingMode wrappingMode) {
+        this.wrappingMode = wrappingMode;
+        initEmpty();
+    }
+    
+    public MyArrayDeque(final int size, final WrappingMode wrappingMode) {
+        this(wrappingMode);
+        allocateElements(size);
+    }
+    
+    public MyArrayDeque(final E[] a, final WrappingMode wrappingMode) {
+        this(wrappingMode);
+        addAll(a);
+    }
+    
+    public MyArrayDeque(final Collection<? extends E> c, final WrappingMode wrappingMode) {
+        this(c.size(), wrappingMode);
         addAll(c);
     }
     
@@ -601,17 +652,6 @@ public class MyArrayDeque<E> extends AbstractList<E>
         return batchRemove(c, false);
     }
     
-    private final <T> T[] copyElements(final T[] a) {
-        if (first < last) {
-            System.arraycopy(elements, first, a, 0, size());
-        } else if (first > last) {
-            final int rightLength = elements.length - first;
-            System.arraycopy(elements, first, a, 0, rightLength);
-            System.arraycopy(elements, 0, a, rightLength, last);
-        }
-        return a;
-    }
-    
     /**
      * @see java.util.AbstractList#clear()
      */
@@ -828,6 +868,39 @@ public class MyArrayDeque<E> extends AbstractList<E>
         }
         
         return true;
+    }
+    
+    private final void writeObject(final ObjectOutputStream s) throws IOException {
+        s.defaultWriteObject();
+        s.writeInt(size());
+        final Object[] a = this.elements;
+        final int first = this.first;
+        final int last = this.last;
+        if (first < last) {
+            for (int i = first; i < last; i++) {
+                s.writeObject(a[i]);
+            }
+        } else if (first > last) {
+            for (int i = first; i < a.length; i++) {
+                s.writeObject(a[i]);
+            }
+            for (int i = 0; i < a.length; i++) {
+                s.writeObject(a[i]);
+            }
+        }
+    }
+    
+    private final void readObject(final ObjectInputStream s)
+            throws ClassNotFoundException, IOException {
+        s.defaultReadObject();
+        final int size = s.readInt();
+        allocateElements(size);
+        final Object[] a = this.elements;
+        first = 0;
+        last = size;
+        for (int i = 0; i < a.length; i++) {
+            a[i] = s.readObject();
+        }
     }
     
     /**
