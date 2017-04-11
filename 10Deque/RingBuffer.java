@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Random;
 import java.util.RandomAccess;
 
@@ -299,15 +300,48 @@ public class RingBuffer<E> extends AbstractList<E>
         final int first = this.first;
         final int last = this.last;
         final int mask = this.mask;
-        
         final int i = first + index & mask;
+        final int size = size();
+        final int newSize = size + 1;
+        if (newSize == a.length) {
+            // will have to resize anyways,
+            // so resize before copying
+            final int oldCapacity = a.length;
+            final int newCapacity = oldCapacity << 1;
+            if (newCapacity < 0) {
+                throw new OutOfMemoryError("array size too big");
+            }
+            final Object[] c = new Object[newCapacity];
+            if (first < last) {
+                System.arraycopy(a, first, c, 0, index);
+                c[index] = element;
+                System.arraycopy(a, first + index, c, index + 1, size - index);
+            } else {
+                if (i >= first) {
+                    System.arraycopy(a, first, c, 0, index);
+                    c[index] = element;
+                    System.arraycopy(a, first + index, c, index + 1, a.length - index);
+                } else {
+                    final int rightLength = a.length - first;
+                    System.arraycopy(a, first, c, 0, rightLength);
+                    System.arraycopy(a, 0, c, rightLength, i);
+                    c[rightLength + i] = element;
+                    System.arraycopy(a, i, c, rightLength + i + 1, last - i);
+                }
+            }
+            this.first = 0;
+            this.last = newSize;
+            this.mask = newCapacity - 1;
+            elements = c;
+            return;
+        }
         
         if (i >= first) {
             // i is in the third part
             // instead of moving everything to the right and wrapping,
             // move to the left to avoid wrapping
             System.arraycopy(a, first, a, first - 1, i - first); // TODO check length
-            this.first--; // no wrap checking
+            this.first = first - 1; // no wrap checking
         } else {
             // else if (first < last || i < first)
             // if first < last, there will always be empty element at end of array
@@ -316,8 +350,6 @@ public class RingBuffer<E> extends AbstractList<E>
             this.last = last + 1 & mask; // only last++ if i < first, but extra branch slower than bit &
         }
         a[i] = element;
-        
-        tryToDoubleCapacity();
     }
     
     /**
@@ -563,8 +595,84 @@ public class RingBuffer<E> extends AbstractList<E>
         return indexOf(o) != -1;
     }
     
-    private final boolean addAllUnchecked(final int index, final Object[] a) {
-        // TODO
+    @SuppressWarnings("unchecked")
+    private final boolean addAllUnchecked(final int index, final Object[] b) {
+        Objects.requireNonNull(b);
+        final int bLen = b.length;
+        if (bLen == 0) {
+            return false;
+        }
+        if (bLen == 1) {
+            add(index, (E) b[0]);
+            return true;
+        }
+        
+        checkIndexForAdd(index);
+        
+        final Object[] a = elements;
+        final int size = size();
+        final int space = a.length - size; // space left
+        
+        final int first = this.first;
+        final int last = this.last;
+        final int mask = this.mask;
+        final int i = first + index & mask;
+        
+        if (bLen <= space) {
+            if (i >= first) {
+                // i is in the third part
+                // instead of moving everything to the right and wrapping,
+                // move to the left to avoid wrapping
+                System.arraycopy(a, first, a, first - bLen, i - first); // TODO check length
+                this.first = first - bLen; // no wrap checking
+            } else {
+                // else if (first < last || i < first)
+                // if first < last, there will always be empty element at end of array
+                // if i < first, i is in the first part, do the same thing
+                System.arraycopy(a, i, a, i + bLen, last - i);
+                this.last = last + bLen & mask;
+                // no & mask needed if i < first, but extra branch slower than bit &
+            }
+            System.arraycopy(b, 0, a, i, b.length);
+            // tryToDoubleCapacity(); won't happen, if needed, below case will run
+            return true;
+        }
+        
+        // could have just doubled capacity and run same algo as above,
+        // but that copies stuff twice unnecessarily,
+        // so write own reallocation here
+        final int newSize = size + bLen;
+        final int oldCapacity = a.length;
+        int newCapacity = oldCapacity << 1;
+        while (newCapacity < newSize) {
+            newCapacity <<= 1;
+        }
+        if (newCapacity < 0) {
+            throw new OutOfMemoryError("array size too big");
+        }
+        final Object[] c = new Object[newCapacity];
+        
+        if (first < last) {
+            System.arraycopy(a, first, c, 0, index);
+            System.arraycopy(b, 0, c, index, b.length);
+            System.arraycopy(a, first + index, c, index + bLen, size - index);
+        } else {
+            if (i >= first) {
+                System.arraycopy(a, first, c, 0, index);
+                System.arraycopy(b, 0, c, index, b.length);
+                System.arraycopy(a, first + index, c, index + bLen, a.length - index);
+            } else {
+                final int rightLength = a.length - first;
+                System.arraycopy(a, first, c, 0, rightLength);
+                System.arraycopy(a, 0, c, rightLength, i);
+                System.arraycopy(b, 0, c, rightLength + i, b.length);
+                System.arraycopy(a, i, c, rightLength + i + bLen, last - i);
+            }
+        }
+        this.first = 0;
+        this.last = newSize;
+        this.mask = newCapacity - 1;
+        elements = c;
         return false;
     }
     
