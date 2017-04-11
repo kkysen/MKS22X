@@ -9,8 +9,8 @@
 	<classpathentry kind="src" path="07Quick"/>
 	<classpathentry kind="src" path="08Merge"/>
 	<classpathentry kind="src" path="09LinkedList"/>
-	<classpathentry kind="src" path="10StackQueue"/>
-	<classpathentry kind="src" path="Deque"/>
+	<classpathentry kind="src" path="StackQueue"/>
+	<classpathentry kind="src" path="10Deque"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.7.0_80"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

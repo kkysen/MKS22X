@@ -11,11 +11,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.RandomAccess;
 
 /**
- * A null-containing ArrayDeque like {@link java.util.ArrayDeque} that
- * implements {@link List} and extends {@link AbstractList}.
+ * A better {@link java.util.ArrayDeque}.
+ * It implements the {@link List} interface unlike {@link java.util.ArrayDeque},
+ * allows null elements, and contains addAll(E[]) and similar methods for faster
+ * array adding.
  * 
  * @see java.util.ArrayDeque
  * 
@@ -25,48 +28,17 @@ import java.util.RandomAccess;
 public class RingBuffer<E> extends AbstractList<E>
         implements Deque<E>, RandomAccess, Cloneable, Serializable {
     
-    public enum WrappingMode {
-        DEQUE,
-        STACK,
-        REVERSE_STACK,
-        QUEUE,
-        REVERSE_QUEUE;
-    }
-    
     private static final long serialVersionUID = 2852255322378711691L;
     
     private static final int MIN_INITIAL_CAPACITY = 8;
     
     private static final int DEFAULT_CAPACITY = 16;
     
-    private static final WrappingMode DEFAULT_WRAPPING_MODE = WrappingMode.DEQUE;
-    
-    private final WrappingMode wrappingMode;
-    
     private Object[] elements;
     
     private int first = 0;
     private int last = 0;
     private int mask; // all 1111s bit mask
-    
-    private final void positionPointersAfterAllocation() {
-        switch (wrappingMode) {
-            case DEQUE:
-                first = elements.length >>> 1;
-                break;
-            case STACK:
-            case QUEUE:
-                first = mask;
-                break;
-            case REVERSE_STACK:
-            case REVERSE_QUEUE:
-                first = 0;
-                break;
-            default:
-                first = -1; // can't happen
-        }
-        last = first;
-    }
     
     // elements.length is a power of 2
     private final void allocateElements(final int size) {
@@ -83,58 +55,24 @@ public class RingBuffer<E> extends AbstractList<E>
         }
         elements = new Object[capacity];
         mask = capacity - 1;
-        positionPointersAfterAllocation();
     }
     
-    private final <T> T[] copyElements(final T[] a, final int offset) {
+    private final <T> T[] copyElements(final T[] a) {
         if (first < last) {
-            System.arraycopy(elements, first, a, offset, size());
-        } else if (first > last) {
+            System.arraycopy(elements, first, a, 0, size());
+        } else {
             final int rightLength = elements.length - first;
-            System.arraycopy(elements, first, a, offset, rightLength);
-            System.arraycopy(elements, 0, a, offset + rightLength, last);
+            System.arraycopy(elements, first, a, 0, rightLength);
+            System.arraycopy(elements, 0, a, rightLength, last);
         }
         return a;
     }
     
-    private final <T> T[] copyElements(final T[] a) {
-        return copyElements(a, 0);
-    }
-    
-    private final void reallocateElements(final int newCapacity, final int size,
-            final WrappingMode wrappingMode) {
-        final int newFirst;
-        final int newLast;
-        switch (wrappingMode) {
-            case DEQUE:
-                // center pointers in array to minimize wrapping
-                final int mid = newCapacity >>> 1;
-                final int half = size >>> 1;
-                newFirst = mid - half;
-                newLast = newFirst + size;
-                break;
-            case STACK:
-            case QUEUE:
-                newLast = newCapacity - 1;
-                newFirst = newLast - size;
-                break;
-            case REVERSE_STACK:
-            case REVERSE_QUEUE:
-                newFirst = 0;
-                newLast = size;
-                break;
-            default:
-                newFirst = newLast = -1; // can't happen
-        }
-        
-        elements = copyElements(new Object[newCapacity], newFirst);
-        first = newFirst;
-        last = newLast;
-        mask = newCapacity - 1;
-    }
-    
     private final void reallocateElements(final int newCapacity, final int size) {
-        reallocateElements(newCapacity, size, wrappingMode);
+        elements = copyElements(new Object[newCapacity]);
+        first = 0;
+        last = size;
+        mask = newCapacity - 1;
     }
     
     private final void doubleCapacity() {
@@ -146,7 +84,7 @@ public class RingBuffer<E> extends AbstractList<E>
         reallocateElements(newCapacity, oldCapacity);
     }
     
-    private final void tryDoubleCapacity() {
+    private final void tryToDoubleCapacity() {
         if (first == last) {
             doubleCapacity();
         }
@@ -170,38 +108,22 @@ public class RingBuffer<E> extends AbstractList<E>
     private final void initEmpty() {
         elements = new Object[DEFAULT_CAPACITY];
         mask = DEFAULT_CAPACITY - 1;
-        positionPointersAfterAllocation();
     }
     
     public RingBuffer() {
-        this(DEFAULT_WRAPPING_MODE);
-    }
-    
-    public RingBuffer(final int size) {
-        this(size, DEFAULT_WRAPPING_MODE);
-    }
-    
-    public RingBuffer(final Collection<? extends E> c) {
-        this(c, DEFAULT_WRAPPING_MODE);
-    }
-    
-    public RingBuffer(final WrappingMode wrappingMode) {
-        this.wrappingMode = wrappingMode;
         initEmpty();
     }
     
-    public RingBuffer(final int size, final WrappingMode wrappingMode) {
-        this(wrappingMode);
+    public RingBuffer(final int size) {
         allocateElements(size);
     }
     
-    public RingBuffer(final E[] a, final WrappingMode wrappingMode) {
-        this(wrappingMode);
+    public RingBuffer(final E[] a) {
         addAll(a);
     }
     
-    public RingBuffer(final Collection<? extends E> c, final WrappingMode wrappingMode) {
-        this(c.size(), wrappingMode);
+    public RingBuffer(final Collection<? extends E> c) {
+        this(c.size());
         addAll(c);
     }
     
@@ -233,11 +155,11 @@ public class RingBuffer<E> extends AbstractList<E>
         }
     }
     
-    private final void rangeCheck(final int index) {
+    private final void checkIndex(final int index) {
         checkIndexForSize(index, size());
     }
     
-    private final void rangeCheckForAdd(final int index) {
+    private final void checkIndexForAdd(final int index) {
         checkIndexForSize(index, size() + 1);
     }
     
@@ -275,7 +197,7 @@ public class RingBuffer<E> extends AbstractList<E>
     @SuppressWarnings("unchecked")
     @Override
     public E get(final int index) {
-        rangeCheck(index);
+        checkIndex(index);
         return (E) elements[first + index & mask];
     }
     
@@ -284,7 +206,7 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public E set(final int index, final E element) {
-        rangeCheck(index);
+        checkIndex(index);
         final int i = first + index & mask;
         @SuppressWarnings("unchecked")
         final E removed = (E) elements[i];
@@ -298,7 +220,7 @@ public class RingBuffer<E> extends AbstractList<E>
     @Override
     public void addFirst(final E e) {
         elements[first = first - 1 & mask] = e;
-        tryDoubleCapacity();
+        tryToDoubleCapacity();
     }
     
     /**
@@ -308,7 +230,7 @@ public class RingBuffer<E> extends AbstractList<E>
     public void addLast(final E e) {
         elements[last] = e;
         last = last + 1 & mask;
-        tryDoubleCapacity();
+        tryToDoubleCapacity();
     }
     
     /**
@@ -336,6 +258,10 @@ public class RingBuffer<E> extends AbstractList<E>
     public boolean add(final E e) {
         addLast(e);
         return true;
+    }
+    
+    public void enqueue(final E e) {
+        add(e);
     }
     
     /**
@@ -367,32 +293,31 @@ public class RingBuffer<E> extends AbstractList<E>
             return;
         }
         
-        rangeCheckForAdd(index);
+        checkIndexForAdd(index);
         
         final Object[] a = elements;
         final int first = this.first;
+        final int last = this.last;
         final int mask = this.mask;
         
         final int i = first + index & mask;
         
-        if (first < last) {
-            System.arraycopy(a, i, a, i + 1, last - i);
-            a[i] = element;
-            last = last + 1 & mask;
+        if (i >= first) {
+            // i is in the third part
+            // instead of moving everything to the right and wrapping,
+            // move to the left to avoid wrapping
+            System.arraycopy(a, first, a, first - 1, i - first); // TODO check length
+            this.first--; // no wrap checking
         } else {
-            if (i >= first) {
-                // TODO
-            } else {
-                final Object lastElem = a[mask];
-                System.arraycopy(a, first, a, first + 1, mask - first);
-                System.arraycopy(a, i, a, i + 2, mask - i);
-                a[i + 1] = a;
-                System.arraycopy(a, 0, a, 1, i);
-                a[0] = lastElem;
-                last++;
-            }
+            // else if (first < last || i < first)
+            // if first < last, there will always be empty element at end of array
+            // if i < first, i is in the first part, do the same thing
+            System.arraycopy(a, i, a, i + 1, last - i);
+            this.last = last + 1 & mask; // only last++ if i < first, but extra branch slower than bit &
         }
-        tryDoubleCapacity();
+        a[i] = element;
+        
+        tryToDoubleCapacity();
     }
     
     /**
@@ -401,11 +326,11 @@ public class RingBuffer<E> extends AbstractList<E>
     @Override
     public E removeFirst() {
         checkEmpty();
-        final int f = first;
+        final int first = this.first;
         @SuppressWarnings("unchecked")
-        final E removed = (E) elements[f];
-        elements[f] = null;
-        first = f + 1 & mask;
+        final E removed = (E) elements[first];
+        elements[first] = null;
+        this.first = first + 1 & mask;
         return removed;
     }
     
@@ -429,6 +354,10 @@ public class RingBuffer<E> extends AbstractList<E>
         return removeFirst();
     }
     
+    public E dequeue() {
+        return remove();
+    }
+    
     /**
      * @see java.util.Deque#pop()
      */
@@ -437,42 +366,39 @@ public class RingBuffer<E> extends AbstractList<E>
         return removeFirst();
     }
     
-    private final boolean delete(final int i) {
+    /**
+     * @param i index in underlying array to delete
+     * @return 0 if no array copying
+     *         1 if array to the left was moved forward by 1
+     *         -1 if array to the right was moved backward by 1
+     */
+    private final int delete(final int i) {
         if (i == 0) {
             removeFirst();
-            return false;
+            return 0;
         }
         if (i == size()) {
             removeLast();
-            return false;
+            return 0;
         }
         
         final Object[] a = elements;
         final int first = this.first;
-        final int mask = this.mask;
+        final int last = this.last;
         
-        if (first < last) {
-            System.arraycopy(a, i, a, i - 1, last - i);
-            last--;
-            a[last] = null;
-        } else if (i <= first) {
-            // TODO
-        } else {
-            // TODO
+        if (i >= first) {
+            // i is in third part
+            System.arraycopy(a, first, a, first + 1, i - first);
+            a[first] = null;
+            this.first = first + 1;
+            return 1;
         }
         
-        System.arraycopy(a, i + 1, a, i, mask - i);
-        a[0] = a[mask];
-        
-        final Object lastElem = a[mask];
-        System.arraycopy(a, first, a, first + 1, a.length - first);
-        System.arraycopy(a, i, a, i + 2, last - i);
-        a[i + 1] = a;
-        System.arraycopy(a, 0, a, 1, i);
-        a[0] = lastElem;
-        last++;
-        
-        return true;
+        // else if (first < last || i < first)
+        // different cases, but do the same thing (see add(int, E) comments)
+        System.arraycopy(a, i + 1, a, i, last - i);
+        a[this.last = last - 1 & mask] = null;
+        return -1;
     }
     
     /**
@@ -480,7 +406,7 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public E remove(final int index) {
-        rangeCheck(index);
+        checkIndex(index);
         final int i = first + index & mask;
         @SuppressWarnings("unchecked")
         final E removed = (E) elements[i];
@@ -505,7 +431,7 @@ public class RingBuffer<E> extends AbstractList<E>
         if (i == -1) {
             return false;
         }
-        remove(i);
+        delete(i);
         return true;
     }
     
@@ -518,7 +444,7 @@ public class RingBuffer<E> extends AbstractList<E>
         if (i == -1) {
             return false;
         }
-        remove(i);
+        delete(i);
         return true;
     }
     
@@ -535,9 +461,9 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public int indexOf(final Object o) {
+        final Object[] a = elements;
         final int first = this.first;
         final int last = this.last;
-        final Object[] a = elements;
         if (first < last) {
             if (o == null) {
                 for (int i = first; i < last; i++) {
@@ -585,8 +511,8 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public int lastIndexOf(final Object o) {
-        final int first = this.first;
         final Object[] a = elements;
+        final int first = this.first;
         if (first < last) {
             if (o == null) {
                 for (int i = last; i >= first; i--) {
@@ -642,7 +568,7 @@ public class RingBuffer<E> extends AbstractList<E>
         return false;
     }
     
-    public <T extends E> boolean addAll(final int index, final T[] a) {
+    public boolean addAll(final int index, final E[] a) {
         return addAllUnchecked(index, a);
     }
     
@@ -663,7 +589,7 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public boolean addAll(final int index, final Collection<? extends E> c) {
-        rangeCheckForAdd(index);
+        checkIndexForAdd(index);
         return addAllUnchecked(index, c.toArray());
     }
     
@@ -700,6 +626,23 @@ public class RingBuffer<E> extends AbstractList<E>
             Arrays.fill(elements, 0, last, null);
         }
         first = last = 0;
+    }
+    
+    private RingBuffer(final RingBuffer<E> clone) {
+        final Object[] a = clone.elements;
+        elements = Arrays.copyOf(a, a.length);
+        first = clone.first;
+        last = clone.last;
+        mask = clone.mask;
+        modCount = clone.modCount;
+    }
+    
+    /**
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public RingBuffer<E> clone() {
+        return new RingBuffer<>(this);
     }
     
     /**
@@ -758,7 +701,7 @@ public class RingBuffer<E> extends AbstractList<E>
                 if (prev == -1) {
                     throw new IllegalStateException();
                 }
-                if (delete(prev)) {
+                if (delete(prev) == -1) {
                     i = i - 1 & mask;
                     last = RingBuffer.this.last;
                 }
@@ -803,7 +746,7 @@ public class RingBuffer<E> extends AbstractList<E>
                 if (prev == -1) {
                     throw new IllegalStateException();
                 }
-                if (delete(prev)) {
+                if (delete(prev) == 1) {
                     i = i + 1 & mask;
                     first = RingBuffer.this.first;
                 }
@@ -1058,15 +1001,29 @@ public class RingBuffer<E> extends AbstractList<E>
     }
     
     public static void main(final String[] args) {
-        final RingBuffer<Integer> ring = new RingBuffer<>(1000, WrappingMode.STACK);
+        final RingBuffer<Integer> ring = new RingBuffer<>(50);
         ring.add(5);
         ring.add(10);
         ring.addFirst(0);
         ring.addFirst(Integer.MAX_VALUE);
+        
+        final Random random = new Random();
+        for (int i = 0; i < 100; i++) {
+            if (random.nextBoolean()) {
+                ring.addLast(random.nextInt(100));
+            } else {
+                ring.addFirst(random.nextInt(100));
+            }
+        }
+        
         System.out.println(ring.first);
         System.out.println(ring.contains(null));
         System.out.println(ring.contains(10));
         System.out.println(ring);
+        
+        for (final int i : ring) {
+            System.out.print(i + ", ");
+        }
     }
     
 }

@@ -7,6 +7,8 @@ import java.util.ArrayDeque;
  */
 public class MyQueue extends ArrayDeque<Integer> {
     
+    private static final long serialVersionUID = 3086819714101747605L;
+    
     public MyQueue() {
         super();
     }

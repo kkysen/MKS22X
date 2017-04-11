@@ -675,7 +675,6 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
             return false;
         }
         
-        // FIXME for subList views
         Node<E> prev;
         Node<E> next;
         if (index == size) {

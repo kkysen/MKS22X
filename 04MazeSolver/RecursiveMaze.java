@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.PriorityQueue;
 
 /**
  * 
@@ -53,13 +52,6 @@ public class RecursiveMaze extends AbstractMaze {
         maze[startI][startJ] = EMPTY;
         final boolean solved = findAnyPath(startI, startJ);
         return solved;
-    }
-    
-    @Deprecated
-    @Override
-    protected boolean aStarPath() {
-        final PriorityQueue<Object> openSet = new PriorityQueue<>();
-        return false; // FIXME
     }
     
     public static void main(final String[] args) throws IOException {

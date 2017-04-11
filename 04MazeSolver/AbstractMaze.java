@@ -195,21 +195,6 @@ public abstract class AbstractMaze {
         return false;
     }
     
-    @Deprecated
-    protected abstract boolean aStarPath();
-    
-    @Deprecated
-    protected boolean findShortestPath() {
-        return aStarPath();
-    }
-    
-    @Deprecated
-    public final int[][] shortestPath() {
-        
-        unsolveable = true;
-        return null;
-    }
-    
     @Override
     public final String toString() {
         final StringBuilder sb = new StringBuilder(m * n);
