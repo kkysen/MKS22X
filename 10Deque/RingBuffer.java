@@ -452,10 +452,11 @@ public class RingBuffer<E> extends AbstractList<E>
     public void removeRange(final int fromIndex, final int toIndex) {
         final int removeLen = toIndex - fromIndex;
         if (removeLen < 0) {
-            throw new IllegalArgumentException(); // TODO
+            throw new IllegalArgumentException("fromIndex: " + fromIndex
+                    + " must be less than or equal to toIndex: " + toIndex);
         }
         checkIndex(fromIndex);
-        checkIndex(toIndex);
+        checkIndexForAdd(toIndex);
         
         if (removeLen == 0) {
             return;
@@ -727,9 +728,42 @@ public class RingBuffer<E> extends AbstractList<E>
         return addAllUnchecked(index, c.toArray());
     }
     
-    private final boolean batchRemove(final Collection<?> c, final boolean remove) {
-        // TODO
-        return false;
+    /**
+     * undefined behavior if c.contains() throws an exception
+     * 
+     * @param c collections whose elements are to be removed or retained
+     * @param notRemove if elements should be removed if contained in c
+     * @return true if any elements removed
+     */
+    private final boolean batchRemove(final Collection<?> c, final boolean notRemove) {
+        Objects.requireNonNull(c);
+        
+        final Object[] a = elements;
+        final int last = this.last;
+        final int mask = this.mask;
+        
+        int i = first;
+        int j = i;
+        for (; i != last; i = i + 1 & mask) {
+            if (c.contains(a[i]) && notRemove) {
+                a[j] = a[i];
+                j = j + 1 & mask;
+            }
+        }
+        
+        if (j == i) {
+            return false;
+        }
+        
+        if (j < i) {
+            Arrays.fill(a, j, i, null);
+        } else {
+            Arrays.fill(a, j, a.length, null);
+            Arrays.fill(a, 0, i, null);
+        }
+        
+        this.last = j;
+        return true;
     }
     
     /**
