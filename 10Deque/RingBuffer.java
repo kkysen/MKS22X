@@ -299,7 +299,6 @@ public class RingBuffer<E> extends AbstractList<E>
         final Object[] a = elements;
         final int first = this.first;
         final int last = this.last;
-        final int mask = this.mask;
         final int i = first + index & mask;
         final int size = size();
         final int newSize = size + 1;
@@ -331,7 +330,7 @@ public class RingBuffer<E> extends AbstractList<E>
             }
             this.first = 0;
             this.last = newSize;
-            this.mask = newCapacity - 1;
+            mask = newCapacity - 1;
             elements = c;
             return;
         }
@@ -415,11 +414,10 @@ public class RingBuffer<E> extends AbstractList<E>
         }
         
         final Object[] a = elements;
-        final int first = this.first;
-        final int last = this.last;
         
         if (i >= first) {
             // i is in third part
+            final int first = this.first;
             System.arraycopy(a, first, a, first + 1, i - first);
             a[first] = null;
             this.first = first + 1;
@@ -428,6 +426,7 @@ public class RingBuffer<E> extends AbstractList<E>
         
         // else if (first < last || i < first)
         // different cases, but do the same thing (see add(int, E) comments)
+        final int last = this.last;
         System.arraycopy(a, i + 1, a, i, last - i);
         a[this.last = last - 1 & mask] = null;
         return -1;
@@ -451,7 +450,35 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public void removeRange(final int fromIndex, final int toIndex) {
-        // TODO
+        final int removeLen = toIndex - fromIndex;
+        if (removeLen < 0) {
+            throw new IllegalArgumentException(); // TODO
+        }
+        checkIndex(fromIndex);
+        checkIndex(toIndex);
+        
+        if (removeLen == 0) {
+            return;
+        }
+        final int i = first + fromIndex & mask;
+        if (removeLen == 1) {
+            delete(i);
+            return;
+        }
+        
+        final Object[] a = elements;
+        
+        if (i >= first) {
+            final int first = this.first;
+            System.arraycopy(a, first, a, first + removeLen, i - first);
+            Arrays.fill(a, first, first + removeLen, null);
+            this.first = first + removeLen;
+        } else {
+            final int last = this.last;
+            System.arraycopy(a, i + removeLen, a, i, last - i);
+            Arrays.fill(a, i + removeLen, i, null);
+            this.last = last - removeLen & mask;
+        }
     }
     
     /**
@@ -615,7 +642,6 @@ public class RingBuffer<E> extends AbstractList<E>
         
         final int first = this.first;
         final int last = this.last;
-        final int mask = this.mask;
         final int i = first + index & mask;
         
         if (bLen <= space) {
@@ -671,7 +697,7 @@ public class RingBuffer<E> extends AbstractList<E>
         }
         this.first = 0;
         this.last = newSize;
-        this.mask = newCapacity - 1;
+        mask = newCapacity - 1;
         elements = c;
         return false;
     }
