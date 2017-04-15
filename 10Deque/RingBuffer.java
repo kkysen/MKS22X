@@ -119,7 +119,8 @@ public class RingBuffer<E> extends AbstractList<E>
         allocateElements(size);
     }
     
-    public RingBuffer(final E[] a) {
+    @SafeVarargs
+    public RingBuffer(final E... a) {
         addAll(a);
     }
     
@@ -281,6 +282,39 @@ public class RingBuffer<E> extends AbstractList<E>
         addFirst(e);
     }
     
+    private final void add(final Object[] a, final int size, final int first, final int last,
+            final int index, final int i, final E e) {
+        // will have to resize anyways,
+        // so resize before copying
+        final int oldCapacity = a.length;
+        final int newCapacity = oldCapacity << 1;
+        if (newCapacity < 0) {
+            throw new OutOfMemoryError("array size too big");
+        }
+        final Object[] c = new Object[newCapacity];
+        if (first < last) {
+            System.arraycopy(a, first, c, 0, index);
+            c[index] = e;
+            System.arraycopy(a, first + index, c, index + 1, size - index);
+        } else {
+            if (i >= first) {
+                System.arraycopy(a, first, c, 0, index);
+                c[index] = e;
+                System.arraycopy(a, first + index, c, index + 1, a.length - index);
+            } else {
+                final int rightLength = a.length - first;
+                System.arraycopy(a, first, c, 0, rightLength);
+                System.arraycopy(a, 0, c, rightLength, i);
+                c[rightLength + i] = e;
+                System.arraycopy(a, i, c, rightLength + i + 1, last - i);
+            }
+        }
+        this.first = 0;
+        this.last = a.length;
+        mask = newCapacity - 1;
+        elements = c;
+    }
+    
     /**
      * @see java.util.AbstractList#add(int, java.lang.Object)
      */
@@ -303,35 +337,7 @@ public class RingBuffer<E> extends AbstractList<E>
         final int size = size();
         final int newSize = size + 1;
         if (newSize == a.length) {
-            // will have to resize anyways,
-            // so resize before copying
-            final int oldCapacity = a.length;
-            final int newCapacity = oldCapacity << 1;
-            if (newCapacity < 0) {
-                throw new OutOfMemoryError("array size too big");
-            }
-            final Object[] c = new Object[newCapacity];
-            if (first < last) {
-                System.arraycopy(a, first, c, 0, index);
-                c[index] = element;
-                System.arraycopy(a, first + index, c, index + 1, size - index);
-            } else {
-                if (i >= first) {
-                    System.arraycopy(a, first, c, 0, index);
-                    c[index] = element;
-                    System.arraycopy(a, first + index, c, index + 1, a.length - index);
-                } else {
-                    final int rightLength = a.length - first;
-                    System.arraycopy(a, first, c, 0, rightLength);
-                    System.arraycopy(a, 0, c, rightLength, i);
-                    c[rightLength + i] = element;
-                    System.arraycopy(a, i, c, rightLength + i + 1, last - i);
-                }
-            }
-            this.first = 0;
-            this.last = newSize;
-            mask = newCapacity - 1;
-            elements = c;
+            add(a, size, first, last, index, i, element);
             return;
         }
         
@@ -441,7 +447,7 @@ public class RingBuffer<E> extends AbstractList<E>
         final int i = first + index & mask;
         @SuppressWarnings("unchecked")
         final E removed = (E) elements[i];
-        delete(index);
+        delete(i);
         return removed;
     }
     
@@ -461,6 +467,8 @@ public class RingBuffer<E> extends AbstractList<E>
         if (removeLen == 0) {
             return;
         }
+        
+        final int first = this.first;
         final int i = first + fromIndex & mask;
         if (removeLen == 1) {
             delete(i);
@@ -470,14 +478,23 @@ public class RingBuffer<E> extends AbstractList<E>
         final Object[] a = elements;
         
         if (i >= first) {
-            final int first = this.first;
-            System.arraycopy(a, first, a, first + removeLen, i - first);
-            Arrays.fill(a, first, first + removeLen, null);
-            this.first = first + removeLen;
+            final int j = i + removeLen;
+            if (j < a.length) {
+                System.arraycopy(a, first, a, first + removeLen, i - first);
+                Arrays.fill(a, first, first + removeLen, null);
+                this.first = j;
+            } else if (j == a.length) {
+                Arrays.fill(a, first, a.length, null);
+                this.first = 0;
+            } else {
+                // j > a.length, must wrap around, removing from both ends
+                // TODO
+                this.first = j & mask;
+            }
         } else {
             final int last = this.last;
             System.arraycopy(a, i + removeLen, a, i, last - i);
-            Arrays.fill(a, i + removeLen, i, null);
+            Arrays.fill(a, i, i + removeLen, null);
             this.last = last - removeLen & mask;
         }
     }
@@ -516,6 +533,24 @@ public class RingBuffer<E> extends AbstractList<E>
         return removeFirstOccurrence(o);
     }
     
+    private static final int indexOf(final Object[] a, final Object o, final int fromIndex,
+            final int toIndex) {
+        if (o == null) {
+            for (int i = fromIndex; i < toIndex; i++) {
+                if (a[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = fromIndex; i < toIndex; i++) {
+                if (o.equals(a[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+    
     /**
      * @see java.util.AbstractList#indexOf(java.lang.Object)
      */
@@ -525,41 +560,35 @@ public class RingBuffer<E> extends AbstractList<E>
         final int first = this.first;
         final int last = this.last;
         if (first < last) {
-            if (o == null) {
-                for (int i = first; i < last; i++) {
-                    if (a[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = first; i < last; i++) {
-                    if (o.equals(a[i])) {
-                        return i - first;
-                    }
+            final int i = indexOf(a, o, first, last);
+            if (i != -1) {
+                return i - first;
+            }
+        } else {
+            int i = indexOf(a, o, first, a.length);
+            if (i != -1) {
+                return i - first;
+            }
+            i = indexOf(a, o, 0, last);
+            if (i != -1) {
+                return a.length - first + i;
+            }
+        }
+        return -1;
+    }
+    
+    private static final int lastIndexOf(final Object[] a, final Object o, final int fromIndex,
+            final int toIndex) {
+        if (o == null) {
+            for (int i = fromIndex - 1; i >= toIndex; i--) {
+                if (a[i] == null) {
+                    return i;
                 }
             }
         } else {
-            if (o == null) {
-                for (int i = first; i < a.length; i++) {
-                    if (a[i] == null) {
-                        return i - first;
-                    }
-                }
-                for (int i = 0; i < last; i++) {
-                    if (a[i] == null) {
-                        return a.length - first + i;
-                    }
-                }
-            } else {
-                for (int i = first; i < a.length; i++) {
-                    if (o.equals(a[i])) {
-                        return i - first;
-                    }
-                }
-                for (int i = 0; i < last; i++) {
-                    if (o.equals(a[i])) {
-                        return a.length - first + i;
-                    }
+            for (int i = fromIndex - 1; i >= toIndex; i--) {
+                if (o.equals(a[i])) {
+                    return i;
                 }
             }
         }
@@ -574,42 +603,18 @@ public class RingBuffer<E> extends AbstractList<E>
         final Object[] a = elements;
         final int first = this.first;
         if (first < last) {
-            if (o == null) {
-                for (int i = last; i >= first; i--) {
-                    if (a[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = last; i >= first; i--) {
-                    if (o.equals(a[i])) {
-                        return i - first;
-                    }
-                }
+            final int i = lastIndexOf(a, o, last, first);
+            if (i != -1) {
+                return i - first;
             }
         } else {
-            if (o == null) {
-                for (int i = last; i >= 0; i--) {
-                    if (a[i] == null) {
-                        return a.length - first + i;
-                    }
-                }
-                for (int i = a.length - 1; i >= first; i--) {
-                    if (a[i] == null) {
-                        return i - first;
-                    }
-                }
-            } else {
-                for (int i = last; i >= 0; i--) {
-                    if (o.equals(a[i])) {
-                        return a.length - first + i;
-                    }
-                }
-                for (int i = a.length - 1; i >= first; i--) {
-                    if (o.equals(a[i])) {
-                        return i - first;
-                    }
-                }
+            int i = lastIndexOf(a, o, last, 0);
+            if (i != -1) {
+                return a.length - first + i;
+            }
+            i = lastIndexOf(a, o, a.length, first);
+            if (i != -1) {
+                return i - first;
             }
         }
         return -1;
@@ -623,48 +628,8 @@ public class RingBuffer<E> extends AbstractList<E>
         return indexOf(o) != -1;
     }
     
-    @SuppressWarnings("unchecked")
-    private final boolean addAllUnchecked(final int index, final Object[] b) {
-        Objects.requireNonNull(b);
-        final int bLen = b.length;
-        if (bLen == 0) {
-            return false;
-        }
-        if (bLen == 1) {
-            add(index, (E) b[0]);
-            return true;
-        }
-        
-        checkIndexForAdd(index);
-        
-        final Object[] a = elements;
-        final int size = size();
-        final int space = a.length - size; // space left
-        
-        final int first = this.first;
-        final int last = this.last;
-        final int i = first + index & mask;
-        
-        if (bLen <= space) {
-            if (i >= first) {
-                // i is in the third part
-                // instead of moving everything to the right and wrapping,
-                // move to the left to avoid wrapping
-                System.arraycopy(a, first, a, first - bLen, i - first); // TODO check length
-                this.first = first - bLen; // no wrap checking
-            } else {
-                // else if (first < last || i < first)
-                // if first < last, there will always be empty element at end of array
-                // if i < first, i is in the first part, do the same thing
-                System.arraycopy(a, i, a, i + bLen, last - i);
-                this.last = last + bLen & mask;
-                // no & mask needed if i < first, but extra branch slower than bit &
-            }
-            System.arraycopy(b, 0, a, i, b.length);
-            // tryToDoubleCapacity(); won't happen, if needed, below case will run
-            return true;
-        }
-        
+    private final void addAll(final Object[] a, final int size, final int first, final int last,
+            final int index, final int i, final Object[] b, final int bLen) {
         // could have just doubled capacity and run same algo as above,
         // but that copies stuff twice unnecessarily,
         // so write own reallocation here
@@ -700,14 +665,73 @@ public class RingBuffer<E> extends AbstractList<E>
         this.last = newSize;
         mask = newCapacity - 1;
         elements = c;
-        return false;
     }
     
-    public boolean addAll(final int index, final E[] a) {
+    @SuppressWarnings("unchecked")
+    private final boolean addAllUnchecked(final int index, final Object[] b) {
+        Objects.requireNonNull(b);
+        final int bLen = b.length;
+        if (bLen == 0) {
+            return false;
+        }
+        if (bLen == 1) {
+            add(index, (E) b[0]);
+            return true;
+        }
+        
+        checkIndexForAdd(index);
+        
+        final Object[] a = elements;
+        final int size = size();
+        final int space = a.length - size; // space left
+        
+        final int first = this.first;
+        final int last = this.last;
+        final int i = first + index & mask;
+        
+        if (bLen > space) {
+            addAll(a, size, first, last, index, i, b, bLen);
+            return false;
+        }
+        
+        if (first < last) {
+            final int j = i + bLen;
+            int newLast = last + bLen;
+            if (newLast <= a.length) {
+                System.arraycopy(a, i, a, i + bLen, last - i);
+            } else {
+                // wrapping required
+                newLast &= mask;
+                System.arraycopy(a, i, a, i + bLen - newLast, a.length - last);
+                System.arraycopy(a, 0, a, newLast, newLast);
+                
+                return true;
+            }
+            this.last = newLast & mask;
+        } else if (i >= first) {
+            // i is in the third part
+            // instead of moving everything to the right and wrapping,
+            // move to the left to avoid wrapping
+            System.arraycopy(a, first, a, first - bLen, i - first); // TODO check length
+            this.first = first - bLen; // no wrap checking
+        } else { // i < first
+            // i is in the first part
+            // there will always be room, no wrapping needed
+            System.arraycopy(a, i, a, i + bLen, last - i);
+            this.last = last + bLen;
+        }
+        System.arraycopy(b, 0, a, i, b.length);
+        // tryToDoubleCapacity(); won't happen, if needed, below case will run
+        return true;
+    }
+    
+    @SafeVarargs
+    public final boolean addAll(final int index, final E... a) {
         return addAllUnchecked(index, a);
     }
     
-    public boolean addAll(final E[] a) {
+    @SafeVarargs
+    public final boolean addAll(final E... a) {
         return addAll(size(), a);
     }
     
@@ -942,32 +966,70 @@ public class RingBuffer<E> extends AbstractList<E>
         return null;
     }
     
+    private static final int hashCode(final Object[] a, final int fromIndex, final int toIndex,
+            int result) {
+        for (int i = fromIndex; i < toIndex; i++) {
+            final Object e = a[i];
+            result = 31 * result + (e == null ? 0 : e.hashCode());
+        }
+        return result;
+    }
+    
     /**
      * @see java.util.AbstractList#hashCode()
      */
     @Override
     public int hashCode() {
         int result = 1;
-        final int prime = 31;
         final Object[] a = elements;
         final int first = this.first;
         final int last = this.last;
         if (first < last) {
-            for (int i = first; i < last; i++) {
-                final Object e = a[i];
-                result = prime * result + (e == null ? 0 : e.hashCode());
-            }
+            result = hashCode(a, first, last, result);
         } else if (first > last) {
-            for (int i = first; i < a.length; i++) {
-                final Object e = a[i];
-                result = prime * result + (e == null ? 0 : e.hashCode());
-            }
-            for (int i = 0; i < a.length; i++) {
-                final Object e = a[i];
-                result = prime * result + (e == null ? 0 : e.hashCode());
-            }
+            result = hashCode(a, first, a.length, result);
+            result = hashCode(a, 0, last, result);
         }
         return result;
+    }
+    
+    private static final boolean equals(final Object[] a, final RingBuffer<?> other,
+            final int first, final int last, final int mask) {
+        final Object[] b = other.elements;
+        final int offset = first - other.first;
+        if (first < last) {
+            for (int i = first; i < last; i++) {
+                if (!a[i].equals(b[i + offset])) {
+                    return false;
+                }
+            }
+        } else {
+            for (int i = first; i < a.length; i++) {
+                if (!a[i].equals(b[i + offset & mask])) {
+                    return false;
+                }
+            }
+            for (int i = 0; i < last; i++) {
+                if (!a[i].equals(b[i + offset & mask])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    public boolean equals(final RingBuffer<?> other) {
+        return equals(elements, other, first, last, mask);
+    }
+    
+    private static final boolean equals(final Object[] a, final Iterator<?> iter,
+            final int fromIndex, final int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
+            if (!a[i].equals(iter.next())) {
+                return false;
+            }
+        }
+        return true;
     }
     
     /**
@@ -996,28 +1058,8 @@ public class RingBuffer<E> extends AbstractList<E>
             return true;
         }
         
-        if (obj instanceof RingBuffer) {
-            final RingBuffer<?> other = (RingBuffer<?>) obj;
-            final Object[] b = other.elements;
-            final int offset = first - other.first;
-            if (first < last) {
-                for (int i = first; i < last; i++) {
-                    if (!a[i].equals(b[i + offset])) {
-                        return false;
-                    }
-                }
-            } else {
-                for (int i = first; i < a.length; i++) {
-                    if (!a[i].equals(b[i + offset & mask])) {
-                        return false;
-                    }
-                }
-                for (int i = 0; i < last; i++) {
-                    if (!a[i].equals(b[i + offset & mask])) {
-                        return false;
-                    }
-                }
-            }
+        if (obj instanceof RingBuffer && equals(a, (RingBuffer<?>) obj, first, last, mask)) {
+            return true;
         }
         
         if (list instanceof RandomAccess) {
@@ -1031,25 +1073,22 @@ public class RingBuffer<E> extends AbstractList<E>
         
         final Iterator<?> iter = list.iterator();
         if (first < last) {
-            for (int i = first; i < last; i++) {
-                if (!a[i].equals(iter.next())) {
-                    return false;
-                }
-            }
+            return equals(a, iter, first, last);
         } else {
-            for (int i = first; i < a.length; i++) {
-                if (!a[i].equals(iter.next())) {
-                    return false;
-                }
+            if (!equals(a, iter, first, a.length)) {
+                return false;
             }
-            for (int i = 0; i < last; i++) {
-                if (!a[i].equals(iter.next())) {
-                    return false;
-                }
-            }
+            return equals(a, iter, 0, last);
         }
-        
-        return true;
+    }
+    
+    private static final void toString(final StringBuilder sb, final Object[] a,
+            final int fromIndex, final int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
+            sb.append(String.valueOf(a[i]));
+            sb.append(',');
+            sb.append(' ');
+        }
     }
     
     /**
@@ -1065,26 +1104,21 @@ public class RingBuffer<E> extends AbstractList<E>
         final StringBuilder sb = new StringBuilder();
         sb.append('[');
         if (first < last) {
-            for (int i = first; i < last; i++) {
-                sb.append(a[i].toString());
-                sb.append(',');
-                sb.append(' ');
-            }
+            toString(sb, a, first, last);
         } else {
-            for (int i = first; i < a.length; i++) {
-                sb.append(a[i].toString());
-                sb.append(',');
-                sb.append(' ');
-            }
-            for (int i = 0; i < last; i++) {
-                sb.append(a[i].toString());
-                sb.append(',');
-                sb.append(' ');
-            }
+            toString(sb, a, first, a.length);
+            toString(sb, a, 0, last);
         }
         sb.setCharAt(sb.length() - 2, ']');
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
+    }
+    
+    private static final void writeObject(final Object[] a, final ObjectOutputStream s,
+            final int fromIndex, final int toIndex) throws IOException {
+        for (int i = fromIndex; i < toIndex; i++) {
+            s.writeObject(a[i]);
+        }
     }
     
     private final void writeObject(final ObjectOutputStream s) throws IOException {
@@ -1094,16 +1128,10 @@ public class RingBuffer<E> extends AbstractList<E>
         final int first = this.first;
         final int last = this.last;
         if (first < last) {
-            for (int i = first; i < last; i++) {
-                s.writeObject(a[i]);
-            }
+            writeObject(a, s, first, last);
         } else if (first > last) {
-            for (int i = first; i < a.length; i++) {
-                s.writeObject(a[i]);
-            }
-            for (int i = 0; i < a.length; i++) {
-                s.writeObject(a[i]);
-            }
+            writeObject(a, s, first, a.length);
+            writeObject(a, s, 0, last);
         }
     }
     
@@ -1175,12 +1203,14 @@ public class RingBuffer<E> extends AbstractList<E>
         ring.addFirst(0);
         ring.addFirst(Integer.MAX_VALUE);
         
-        final Random random = new Random();
-        for (int i = 0; i < 100; i++) {
+        final Random random = new Random(12345678);
+        for (int i = 0; i < 10; i++) {
             if (random.nextBoolean()) {
-                ring.addLast(random.nextInt(100));
+                ring.addLast(i);
+                //ring.addLast(random.nextInt(100));
             } else {
-                ring.addFirst(random.nextInt(100));
+                ring.addFirst(i);
+                //ring.addFirst(random.nextInt(100));
             }
         }
         
@@ -1192,6 +1222,20 @@ public class RingBuffer<E> extends AbstractList<E>
         for (final int i : ring) {
             System.out.print(i + ", ");
         }
+        System.out.println();
+        
+        ring.remove(3);
+        System.out.println("remove(3): " + ring);
+        
+        ring.removeRange(3, 6);
+        System.out.println("removeRange(3, 6): " + ring);
+        
+        ring.addAll(new Integer[] {5, 6, 7, 8, 9, 10});
+        System.out.println("addAll: " + ring);
+        
+        ring.addAll(5, new Integer[] {null, 1, 2, 3, 4, 5, null});
+        System.out.println("addAll(5, ): " + ring);
+        System.out.println("size: " + ring.size());
     }
     
 }
