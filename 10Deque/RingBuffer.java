@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
@@ -1145,6 +1146,23 @@ public class RingBuffer<E> extends AbstractList<E>
         last = size;
         for (int i = 0; i < a.length; i++) {
             a[i] = s.readObject();
+        }
+    }
+    
+    public void sort() {
+        sort(null);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public void sort(final Comparator<? super E> comparator) {
+        if (first < last) {
+            Arrays.sort((E[]) elements, first, last, comparator);
+        } else {
+            final Object[] a = toArray();
+            Arrays.sort((E[]) a, comparator);
+            System.arraycopy(a, 0, elements, 0, a.length);
+            first = 0;
+            last = a.length;
         }
     }
     

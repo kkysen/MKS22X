@@ -15,12 +15,12 @@ public class MyDeque extends RingBuffer<String> {
         super(size);
     }
     
-    public MyDeque(final String[] a) {
-        super(a);
+    public MyDeque(final String... strings) {
+        super(strings);
     }
     
-    public MyDeque(final Collection<? extends String> c) {
-        super(c);
+    public MyDeque(final Collection<? extends String> strings) {
+        super(strings);
     }
     
 }
