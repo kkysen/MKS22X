@@ -183,7 +183,7 @@ public class RingBuffer<E> extends AbstractList<E>
     @Override
     public E getLast() {
         checkEmpty();
-        return (E) elements[last];
+        return (E) elements[last - 1 & mask];
     }
     
     /**
@@ -509,7 +509,7 @@ public class RingBuffer<E> extends AbstractList<E>
         if (i == -1) {
             return false;
         }
-        delete(i);
+        delete(i + first & mask);
         return true;
     }
     
@@ -522,7 +522,7 @@ public class RingBuffer<E> extends AbstractList<E>
         if (i == -1) {
             return false;
         }
-        delete(i);
+        delete(i + first & mask);
         return true;
     }
     
@@ -629,6 +629,14 @@ public class RingBuffer<E> extends AbstractList<E>
         return indexOf(o) != -1;
     }
     
+    private final void addAllFirst() {
+        // TODO
+    }
+    
+    private final void addAllLast() {
+        // TODO
+    }
+    
     private final void addAll(final Object[] a, final int size, final int first, final int last,
             final int index, final int i, final Object[] b, final int bLen) {
         // could have just doubled capacity and run same algo as above,
@@ -653,7 +661,8 @@ public class RingBuffer<E> extends AbstractList<E>
             if (i >= first) {
                 System.arraycopy(a, first, c, 0, index);
                 System.arraycopy(b, 0, c, index, b.length);
-                System.arraycopy(a, first + index, c, index + bLen, a.length - index);
+                System.arraycopy(a, first + index, c, index + bLen, a.length - (first + index));
+                System.arraycopy(a, 0, c, a.length - first + bLen, last);
             } else {
                 final int rightLength = a.length - first;
                 System.arraycopy(a, first, c, 0, rightLength);
@@ -949,13 +958,107 @@ public class RingBuffer<E> extends AbstractList<E>
         };
     }
     
+    private final class ListItr implements ListIterator<E> {
+        
+        private final int first;
+        private final int last;
+        private final int mask;
+        
+        private final int i;
+        private final int lastRet = -1;
+        
+        public ListItr(final int index) {
+            first = RingBuffer.this.first;
+            last = RingBuffer.this.last;
+            mask = RingBuffer.this.mask;
+            i = first + index & mask;
+        }
+        
+        /**
+         * @see java.util.ListIterator#hasNext()
+         */
+        @Override
+        public boolean hasNext() {
+            return i != last;
+        }
+        
+        /**
+         * @see java.util.ListIterator#hasPrevious()
+         */
+        @Override
+        public boolean hasPrevious() {
+            return i != first;
+        }
+        
+        /**
+         * @see java.util.ListIterator#next()
+         */
+        @Override
+        public E next() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+        
+        /**
+         * @see java.util.ListIterator#previous()
+         */
+        @Override
+        public E previous() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+        
+        /**
+         * @see java.util.ListIterator#nextIndex()
+         */
+        @Override
+        public int nextIndex() {
+            return i;
+        }
+        
+        /**
+         * @see java.util.ListIterator#previousIndex()
+         */
+        @Override
+        public int previousIndex() {
+            return i - 1 & mask;
+        }
+        
+        /**
+         * @see java.util.ListIterator#remove()
+         */
+        @Override
+        public void remove() {
+            // TODO Auto-generated method stub
+            
+        }
+        
+        /**
+         * @see java.util.ListIterator#set(java.lang.Object)
+         */
+        @Override
+        public void set(final E e) {
+            // TODO Auto-generated method stub
+            
+        }
+        
+        /**
+         * @see java.util.ListIterator#add(java.lang.Object)
+         */
+        @Override
+        public void add(final E e) {
+            // TODO Auto-generated method stub
+            
+        }
+        
+    }
+    
     /**
      * @see java.util.AbstractList#listIterator()
      */
     @Override
     public ListIterator<E> listIterator() {
-        // TODO Auto-generated method stub
-        return null;
+        return listIterator(0);
     }
     
     /**
@@ -963,8 +1066,7 @@ public class RingBuffer<E> extends AbstractList<E>
      */
     @Override
     public ListIterator<E> listIterator(final int index) {
-        // TODO Auto-generated method stub
-        return null;
+        return new ListItr(index);
     }
     
     private static final int hashCode(final Object[] a, final int fromIndex, final int toIndex,

@@ -6,9 +6,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 
@@ -16,7 +18,9 @@ import java.util.Random;
  * @author Khyber Sen
  * @param <E> element type
  */
-public class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
+public abstract class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
+    
+    protected static final Random random = ThreadLocalRandom.current();
     
     private final RingBuffer<E> ring;
     private final ArrayList<E> list;
@@ -48,7 +52,6 @@ public class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
     
     private static final <E> void assertRemovingIteratorsEqual(final Iterator<? extends E> iter1,
             final Iterator<? extends E> iter2) {
-        final Random random = new Random();
         boolean first = true;
         while (true) {
             if (random.nextBoolean() && !first) {
@@ -103,7 +106,6 @@ public class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
     
     private static final <E> int assertListIteratorsEqual(final ListIterator<E> iter1,
             final ListIterator<E> iter2) {
-        final Random random = new Random();
         final Queue<E> queue = new LinkedList<>();
         while (true) {
             final boolean b1 = iter1.hasNext();
@@ -452,16 +454,14 @@ public class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
     }
     
     @SuppressWarnings("unchecked")
-    private RingBufferTester(final RingBufferTester<E> clone) {
+    protected RingBufferTester(final RingBufferTester<E> clone) {
         ring = clone.ring.clone();
         list = (ArrayList<E>) clone.list.clone();
         assertEqual();
     }
     
     @Override
-    public RingBufferTester<E> clone() {
-        return new RingBufferTester<>(this);
-    }
+    protected abstract RingBufferTester<E> clone();
     
     @Override
     public Object[] toArray() {
@@ -595,9 +595,121 @@ public class RingBufferTester<E> extends AbstractList<E> implements Deque<E> {
         return peekFirst();
     }
     
-    public static void main(final String[] args) {
-        final RingBufferTester<Integer> intTester = new RingBufferTester<>();
-        // TODO
+    public int randomIndex() {
+        return random.nextInt(size());
+    }
+    
+    public E getRandom() {
+        return get(randomIndex());
+    }
+    
+    public void addRandom(final E e) {
+        add(randomIndex(), e);
+    }
+    
+    public E setRandom(final E e) {
+        return set(randomIndex(), e);
+    }
+    
+    public E removeRandom() {
+        return remove(randomIndex());
+    }
+    
+    public void addEndRandom(final E e) {
+        if (random.nextBoolean()) {
+            addFirst(e);
+        } else {
+            addLast(e);
+        }
+    }
+    
+    public E removeEndRandom() {
+        if (random.nextBoolean()) {
+            return removeFirst();
+        } else {
+            return removeLast();
+        }
+    }
+    
+    protected abstract E randomElement();
+    
+    public void addEndRandom() {
+        addEndRandom(randomElement());
+    }
+    
+    public void addRandom() {
+        addRandom(randomElement());
+    }
+    
+    public E setRandom() {
+        return setRandom(randomElement());
+    }
+    
+    public void addRandom(final int size) {
+        final int half = size >>> 1;
+        for (int i = 0; i < size/*half*/; i++) {
+            addEndRandom();
+        }
+        @SuppressWarnings("unchecked")
+        final E[] a = (E[]) new Object[size - half];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = randomElement();
+        }
+        //addAll(randomIndex(), a);
+    }
+    
+    public int removeRandomRange() {
+        final int to = randomIndex();
+        final int from = random.nextInt(to);
+        removeRange(from, to);
+        return to - from;
+    }
+    
+    public List<E> randomSubList() {
+        final int to = randomIndex();
+        final int from = random.nextInt(to);
+        return subList(from, to);
+    }
+    
+    public void ensureSize(final int size) {
+        final int toAdd = size - size();
+        if (toAdd > 0) {
+            addRandom(toAdd);
+        }
+    }
+    
+    public void test(final int size) {
+        for (int i = 0; i < size; i++) {
+            addRandom(size);
+            trimToSize();
+            size();
+            isEmpty();
+            getFirst();
+            getLast();
+            element();
+            getRandom();
+            setRandom();
+            addEndRandom();
+            removeEndRandom();
+            removeFirstOccurrence(getRandom());
+            removeLastOccurrence(getRandom());
+            assert contains(getRandom());
+            removeRandom();
+            //addRandom(removeRandomRange());
+            //retainAll(clone().randomSubList());
+            ensureSize(size);
+            //removeAll(clone().randomSubList());
+            ensureSize(size);
+            toArray();
+            iterator();
+            descendingIterator();
+            //listIterator();
+            //listIterator(randomIndex());
+            hashCode();
+            toString();
+            sort();
+            clear();
+        }
     }
     
 }
