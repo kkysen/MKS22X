@@ -66,6 +66,10 @@ public class MyLinkedList extends LinkedList<Integer> {
         System.out.println(iter.next());
         iter.remove();
         System.out.println(list);
+        list.add(5, 999);
+        System.out.println(list);
+        list.add(3, null);
+        System.out.println(list);
     }
     
 }

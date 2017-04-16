@@ -791,7 +791,7 @@ public class LinkedList<E> implements List<E>, Deque<E>, Cloneable {
         final StringBuilder sb = new StringBuilder("[");
         Node<E> node = first;
         for (int i = 0; i < size; i++, node = node.next) {
-            sb.append(node.value.toString());
+            sb.append(String.valueOf(node.value));
             sb.append(", ");
         }
         sb.setCharAt(sb.length() - 2, ']');

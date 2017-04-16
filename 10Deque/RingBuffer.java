@@ -1246,7 +1246,7 @@ public class RingBuffer<E> extends AbstractList<E>
         final Object[] a = elements;
         first = 0;
         last = size;
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < size; i++) {
             a[i] = s.readObject();
         }
     }
