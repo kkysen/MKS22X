@@ -11,6 +11,7 @@
 	<classpathentry kind="src" path="09LinkedList"/>
 	<classpathentry kind="src" path="StackQueue"/>
 	<classpathentry kind="src" path="10Deque"/>
+	<classpathentry kind="src" path="11PostfixEvaluation"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.7.0_80"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
