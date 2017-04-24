@@ -5,9 +5,9 @@ import java.util.Stack;
  * 
  * @author Khyber Sen
  */
-public class Postfix {
+public class StackCalc {
     
-    private Postfix() {}
+    private StackCalc() {}
     
     private static final boolean isOperator(final char c) {
         return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
