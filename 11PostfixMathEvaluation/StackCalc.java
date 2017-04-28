@@ -1,3 +1,4 @@
+import java.util.Random;
 import java.util.Stack;
 
 /**
@@ -71,8 +72,8 @@ public class StackCalc {
         return operands.pop();
     }
     
-    public static final double eval(final String expression) {
-        return eval(expression.toCharArray());
+    public static final double eval(final String postfixExpression) {
+        return eval(postfixExpression.toCharArray());
     }
     
     private static final boolean isOperator(final String token) {
@@ -122,16 +123,22 @@ public class StackCalc {
         System.out.println(eval("11 3 - 4 + 2.5 *") + " is 30.0");
         System.out.println(eval("8 2 + 99 9 - * 2 + 9 -") + " is 893.0");
         
-        String s = "5 3 + 3 * 7 % 4 / 100 * .25 / 5 / -20 -";
+        String s = "5 3 + 3 * 7 / 100 * .25 / 5 / -20 -";
         s += " ";
-        final int iters = 1000000;
+        final int iters = 10;
         final StringBuilder sb = new StringBuilder(s.length() * iters);
+        sb.append(s);
+        final Random random = new Random(0);
+        final char[] ops = {'+', '-', '*', '/'};
         for (int i = 0; i < iters; i++) {
-            sb.append(s);
+            sb.append(random.nextInt());
+            sb.append(' ');
+            sb.append(ops[random.nextInt(4)]);
+            sb.append(' ');
         }
         sb.deleteCharAt(sb.length() - 1);
         
-        System.out.println();
+        System.out.println(sb);
         System.out.println("length: " + sb.length());
         
         System.out.println();

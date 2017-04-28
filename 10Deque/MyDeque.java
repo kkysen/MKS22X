@@ -23,4 +23,15 @@ public class MyDeque extends RingBuffer<String> {
         super(strings);
     }
     
+    public static void main(final String[] args) {
+        final MyDeque d = new MyDeque();
+        d.add("hello");
+        d.add("world");
+        System.out.println(d);
+        d.addFirst("khyber");
+        System.out.println(d);
+        d.removeLast();
+        System.out.println(d);
+    }
+    
 }
