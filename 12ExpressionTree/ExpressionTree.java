@@ -1,9 +1,6 @@
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import stacks.BoolStack;
 import stacks.CharStack;
 import stacks.Stack;
 
@@ -64,7 +61,7 @@ public class ExpressionTree {
     }
     
     public static final ExpressionTree postfix(final char[] expr) {
-        final Deque<ExpressionTree> stack = new ArrayDeque<>();
+        final Stack<ExpressionTree> stack = new Stack<>();
         int i = 0;
         while (i < expr.length) {
             final int last = i;
@@ -82,7 +79,7 @@ public class ExpressionTree {
     }
     
     public static final ExpressionTree prefix(final char[] expr) {
-        final Deque<ExpressionTree> stack = new ArrayDeque<>();
+        final Stack<ExpressionTree> stack = new Stack<>();
         int i = expr.length;
         while (i >= 0) {
             final int last = i;
@@ -277,16 +274,6 @@ public class ExpressionTree {
         return toStringInfix();
     }
     
-    public double evaluateIter() {
-        final Stack<ExpressionTree> tree = new Stack<>();
-        final BoolStack evaledRight = new BoolStack();
-        final ExpressionTree expr = this;
-        for (;;) {
-            break;
-        }
-        return 0; // TODO
-    }
-    
     /**
      * @return the value of the expression tree
      */
@@ -364,7 +351,7 @@ public class ExpressionTree {
         test(ex);
         
         final ExpressionTree bigExpr = random(1000);
-        System.out.println(bigExpr);
+        System.out.println(bigExpr.toString().substring(0, 1000));
         System.out.println(bigExpr.evaluate());
     }
     
