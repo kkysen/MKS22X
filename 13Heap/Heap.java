@@ -18,9 +18,17 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     private E[] elements;
     
     @SuppressWarnings("unchecked")
-    public Heap(final boolean max) {
-        min = max ? -1 : 1;
-        elements = (E[]) new Object[11];
+    public Heap(final int initialCapacity, final boolean min) {
+        this.min = min ? 1 : -1;
+        elements = (E[]) new Comparable[initialCapacity + 1];
+    }
+    
+    public Heap(final int initialCapacity) {
+        this(initialCapacity, true);
+    }
+    
+    public Heap(final boolean min) {
+        this(10, min);
     }
     
     public Heap() {
@@ -47,43 +55,46 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
      * inserts element by first inserting at bottom, then swapping with parent
      * if element < parent
      * 
-     * @param e element to insert at bottom
+     * @param child index to insert new element
+     * @param e element to insert at i (usually bottom)
      */
-    private void siftUp(final E e) {
-        final E[] a = elements;
-        int j = ++size;
-        if (j == 1) {
-            a[1] = e;
+    private void siftUp(int child, final E e) {
+        if (child == 1) {
+            elements[1] = e;
             return;
         }
-        int i = j >>> 1;
+        final E[] a = elements;
+        int parent = child >>> 1;
         // a[i] is parent
-        while (a[i].compareTo(e) * min > 0) {
-            a[j] = a[i];
-            j = i;
-            i >>>= 1;
-            if (i == 1) {
-                break;
-            }
+        while (parent > 0 && e.compareTo(a[parent]) * min <= 0) {
+            a[child] = a[parent];
+            child = parent;
+            parent >>>= 1;
         }
-        a[i] = e;
+        a[child] = e;
     }
     
     /**
-     * inserts element by first inserting at root, then swapping with left child
-     * if leftChild > element
-     * if leftChild < element, try rightChild
+     * inserts element by first inserting at root, then swapping with greater
+     * child
      * 
-     * @param e element to insert at root
+     * @param parent index to insert at
+     * @param e element to insert at index i (usually root)
      */
-    private void siftDown(final E e) {
-        final E[] a = elements;
-        final int i = 1;
-        final int j = i << 1;
-        size++;
-        while (a[j].compareTo(e) * min > 0) {
-            // TODO
+    private void siftDown(int parent, final E e) {
+        if (size == 1) {
+            return;
         }
+        final E[] a = elements;
+        for (int child = parent << 1; child <= size; a[parent] = a[child], parent = child, child <<= 1) {
+            if (child < size && a[child].compareTo(a[child + 1]) * min > 0) {
+                child++;
+            }
+            if (e.compareTo(a[child]) * min <= 0) {
+                break;
+            }
+        }
+        a[parent] = e;
     }
     
     @Override
@@ -94,10 +105,10 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     @Override
     public boolean add(final E e) {
         Objects.requireNonNull(e);
-        if (elements.length == size) {
+        if (elements.length == ++size) {
             elements = Arrays.copyOf(elements, size << 1);
         }
-        siftUp(e);
+        siftUp(size, e);
         return true;
     }
     
@@ -108,8 +119,8 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     
     public E removeNotEmpty() {
         final E removed = elements[1];
-        siftDown(elements[size]);
-        elements[size] = null;
+        siftDown(1, elements[size]);
+        elements[size--] = null;
         return removed;
     }
     
@@ -202,6 +213,33 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
         }
     }
     
+    public String toTreeString() {
+        if (size == 0) {
+            return "[]";
+        }
+        final StringBuilder sb = new StringBuilder();
+        final E[] a = elements;
+        for (int from = 1, to = 2;; from = to, to <<= 1) {
+            for (int i = from; i < to; i++) {
+                if (i > size) {
+                    sb.append("null");
+                } else {
+                    sb.append(String.valueOf(a[i]));
+                }
+                if (i + 1 == to) {
+                    sb.append('\n');
+                    break;
+                }
+                sb.append(',');
+                sb.append(' ');
+            }
+            if (to > size) {
+                break;
+            }
+        }
+        return sb.toString();
+    }
+    
     @Override
     public Iterator<E> iterator() {
         return new Iterator<E>() {
@@ -227,6 +265,28 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
             }
             
         };
+    }
+    
+    public static <T extends Comparable<? super T>> void heapSort(final T[] a) {
+        final Heap<T> heap = new Heap<>(a.length);
+        for (final T e : a) {
+            heap.add(e);
+        }
+        for (int i = 0; i < a.length; i++) {
+            a[i] = heap.remove();
+        }
+    }
+    
+    public static <T extends Comparable<? super T>> boolean isSorted(final T[] a) {
+        T prev = a[0];
+        for (int i = 1; i < a.length; i++) {
+            final T cur = a[i];
+            if (prev.compareTo(cur) > 0) {
+                return false;
+            }
+            prev = cur;
+        }
+        return true;
     }
     
 }
