@@ -11,7 +11,7 @@ public class IntHeap extends Heap<Integer> {
     }
     
     public IntHeap(final boolean max) {
-        super(!max);
+        super(max ? Order.MAX : Order.MIN);
     }
     
     public static void main(final String[] args) {

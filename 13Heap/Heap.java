@@ -10,7 +10,17 @@ import java.util.Objects;
  * @author Khyber Sen
  * @param <E> element type
  */
-public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
+public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> implements Cloneable {
+    
+    /**
+     * 
+     * 
+     * @author Khyber Sen
+     */
+    public enum Order {
+        MIN,
+        MAX
+    };
     
     private final int min;
     
@@ -18,21 +28,13 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     private E[] elements;
     
     @SuppressWarnings("unchecked")
-    public Heap(final int initialCapacity, final boolean min) {
-        this.min = min ? 1 : -1;
+    public Heap(final int initialCapacity, final Order order) {
+        this.min = order == Order.MIN ? 1 : -1;
         elements = (E[]) new Comparable[initialCapacity + 1];
     }
     
-    public Heap(final int initialCapacity) {
-        this(initialCapacity, true);
-    }
-    
-    public Heap(final boolean min) {
-        this(10, min);
-    }
-    
-    public Heap() {
-        this(true);
+    public Heap(final Order order) {
+        this(10, order);
     }
     
     @Override
@@ -190,8 +192,20 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     }
     
     @Override
-    protected Heap<E> clone() throws CloneNotSupportedException {
+    public Heap<E> clone() {
         return new Heap<>(this);
+    }
+    
+    void toStringBuilder(final StringBuilder sb) {
+        final E[] a = elements;
+        for (int i = 1;; i++) {
+            sb.append(a[i].toString());
+            if (i == size) {
+                return;
+            }
+            sb.append(',');
+            sb.append(' ');
+        }
     }
     
     @Override
@@ -201,16 +215,9 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
         }
         final StringBuilder sb = new StringBuilder();
         sb.append('[');
-        final E[] a = elements;
-        for (int i = 1;; i++) {
-            sb.append(a[i].toString());
-            if (i == size) {
-                sb.append(']');
-                return sb.toString();
-            }
-            sb.append(',');
-            sb.append(' ');
-        }
+        toStringBuilder(sb);
+        sb.append(']');
+        return sb.toString();
     }
     
     public String toTreeString() {
@@ -268,7 +275,7 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> {
     }
     
     public static <T extends Comparable<? super T>> void heapSort(final T[] a) {
-        final Heap<T> heap = new Heap<>(a.length);
+        final Heap<T> heap = new Heap<>(a.length, Order.MIN);
         for (final T e : a) {
             heap.add(e);
         }

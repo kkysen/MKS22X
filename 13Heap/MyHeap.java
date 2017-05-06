@@ -15,7 +15,7 @@ public class MyHeap extends Heap<String> {
     }
     
     public MyHeap(final boolean max) {
-        super(!max);
+        super(max ? Order.MAX : Order.MIN);
     }
     
     private static String randomString(final int length) {
