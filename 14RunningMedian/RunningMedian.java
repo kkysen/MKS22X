@@ -22,21 +22,28 @@ public class RunningMedian extends MedianHeap<Integer> {
         } else if (cmp < 0) {
             return greater.peek();
         } else {
-            return lesser.peek() + greater.peek() / 2;
+            return lesser.peek() + greater.peek() >>> 1;
         }
     }
     
     public void add(final int i) {
-        add(i);
+        add(new Integer(i));
     }
     
-    public int getMedian() {
-        return median();
+    public double getMedian() {
+        final int cmp = lesser.size() - greater.size();
+        if (cmp > 0) {
+            return lesser.peek();
+        } else if (cmp < 0) {
+            return greater.peek();
+        } else {
+            return (double) (lesser.peek() + greater.peek()) / 2;
+        }
     }
     
     public static void main(final String[] args) {
         final RunningMedian medians = new RunningMedian();
-        final int size = 1000001;
+        final int size = 100000;
         final int[] a = new int[size];
         final Random random = new Random();
         for (int i = 0; i < size; i++) {
@@ -45,8 +52,8 @@ public class RunningMedian extends MedianHeap<Integer> {
             medians.add(x);
         }
         Arrays.sort(a);
-        final int sortedMedian = a[size >>> 1];
-        final int heapMedian = medians.median();
+        final double sortedMedian = (double) (a[size >>> 1] + a[(size >>> 1) - 1]) / 2;
+        final double heapMedian = medians.getMedian();
         System.out.println(sortedMedian + " == " + heapMedian);
     }
     
