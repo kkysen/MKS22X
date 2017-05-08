@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 
  * @author Khyber Sen
  */
-public class MyHeap extends Heap<String> {
+public class MyHeap extends GenericHeap<String> {
     
     private static final Random random = ThreadLocalRandom.current();
     
@@ -29,9 +29,9 @@ public class MyHeap extends Heap<String> {
         for (int i = 0; i < a.length; i++) {
             a[i] = randomString(100);
         }
-        Heap.heapSort(a);
-        System.out.println(Heap.isSorted(a));
-        assert Heap.isSorted(a);
+        GenericHeap.heapSort(a);
+        System.out.println(GenericHeap.isSorted(a));
+        assert GenericHeap.isSorted(a);
     }
     
 }

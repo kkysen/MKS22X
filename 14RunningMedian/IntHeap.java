@@ -4,7 +4,7 @@
  * 
  * @author Khyber Sen
  */
-public class IntHeap extends Heap<Integer> {
+public class IntHeap extends GenericHeap<Integer> {
     
     public IntHeap() {
         this(false);

@@ -16,6 +16,7 @@
 	<classpathentry kind="src" path="12ExpressionTree"/>
 	<classpathentry kind="src" path="Stacks"/>
 	<classpathentry kind="src" path="13Heap"/>
+	<classpathentry kind="src" path="14RunningMedian"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.7.0_80"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
