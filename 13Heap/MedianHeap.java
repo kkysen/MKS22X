@@ -17,8 +17,8 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
      * if heaps are equal, median is taken from lesser heap
      */
     
-    private final MaxHeap<E> lesser;
-    private final MinHeap<E> greater;
+    protected final MaxHeap<E> lesser;
+    protected final MinHeap<E> greater;
     
     public MedianHeap(final int initialCapacity) {
         final int half = initialCapacity >>> 1;
@@ -41,25 +41,53 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
         greater.clear();
     }
     
-    public E median() {
-        if (lesser.size() > greater.size()) {
+    private int cmp() {
+        return lesser.size() - greater.size();
+    }
+    
+    private E internalMedian() {
+        if (cmp() > 0) {
             return lesser.peek();
         } else {
             return greater.peek();
         }
     }
     
+    public E median() {
+        return internalMedian();
+    }
+    
     @Override
     public E peek() {
-        return median();
+        return internalMedian();
     }
     
     @Override
     public boolean add(final E e) {
-        if (lesser.isEmpty() || e.compareTo(median()) < 0) {
+        // insert first two
+        if (lesser.isEmpty()) {
             lesser.add(e);
-        } else {
+            return true;
+        }
+        if (greater.isEmpty()) {
             greater.add(e);
+            return true;
+        }
+        
+        // insert if both non empty and rebalance
+        final int cmp = cmp();
+        if (e.compareTo(internalMedian()) < 0) {
+            if (cmp > 0) {
+                greater.add(lesser.replace(e));
+            } else {
+                lesser.add(e);
+            }
+        } else {
+            if (cmp < 0) {
+                lesser.add(greater.replace(e));
+            } else {
+                greater.add(e);
+            }
         }
         return true;
     }
@@ -71,7 +99,7 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
     
     @Override
     public E remove() {
-        if (lesser.size() >= greater.size()) {
+        if (cmp() > 0) {
             return lesser.remove();
         } else {
             return greater.remove();
@@ -80,7 +108,7 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
     
     @Override
     public E poll() {
-        if (lesser.size() >= greater.size()) {
+        if (cmp() > 0) {
             return lesser.poll();
         } else {
             return greater.poll();
@@ -131,6 +159,7 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
             return "[]";
         }
         final StringBuilder sb = new StringBuilder();
+        sb.append('[');
         lesser.toStringBuilder(sb);
         if (!greater.isEmpty()) {
             sb.append(',');
@@ -175,10 +204,18 @@ public class MedianHeap<E extends Comparable<? super E>> extends AbstractQueue<E
         };
     }
     
+    public static <E extends Comparable<? super E>> E median(final E[] a) {
+        final MedianHeap<E> medians = new MedianHeap<>(a.length);
+        for (final E e : a) {
+            medians.add(e);
+        }
+        return medians.median();
+    }
+    
     public static void main(final String[] args) {
         final MedianHeap<Integer> medians = new MedianHeap<>();
         final Random random = new Random(2);
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < 21; i++) {
             final int n = random.nextInt(20);
             System.out.println(n);
             medians.add(n);

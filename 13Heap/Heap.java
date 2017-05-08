@@ -142,6 +142,12 @@ public class Heap<E extends Comparable<? super E>> extends AbstractQueue<E> impl
         return removeNotEmpty();
     }
     
+    public E replace(final E e) {
+        final E removed = elements[1];
+        siftDown(1, e);
+        return removed;
+    }
+    
     private int indexOf(final Object o) {
         final E[] a = this.elements;
         for (int i = 1; i <= size; i++) {
