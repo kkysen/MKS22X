@@ -13,9 +13,16 @@ hs_err_pid*
 
 *.gitignore
 
+# Large Maze Files
 04MazeSolver/tests/biggerMaze.dat
 04MazeSolver/tests/generatedMaze.dat
 04MazeSolver/tests/solvedGeneratedMaze.dat
 bin/tests/biggerMaze.dat
 bin/tests/generatedMaze.dat
 bin/tests/solvedGeneratedMaze.dat
+
+# Heap Dumps
+*.hprof
+*.index
+*.zip
+*.threads

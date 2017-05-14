@@ -41,13 +41,13 @@ public class MazeTests {
     }
     
     public static void test(final Class<? extends MazeSolver> type) throws IOException {
-        test(type, Paths.get("04MazeSolver", "tests"), Paths.get("bigMaze.dat"));
+        test(type, Paths.get("04MazeSolver", "tests"), Paths.get("biggerMaze.dat"));
         System.out.println("waiting...");
         System.in.read();
     }
     
     public static void testAll() throws IOException {
-        test(IterativeBacktrackingMazeSolver.class);
+        //test(IterativeBacktrackingMazeSolver.class);
         test(DepthFirstMazeSolver.class);
         test(BreadthFirstMazeSolver.class);
         test(BestFirstMazeSolver.class);
@@ -56,6 +56,7 @@ public class MazeTests {
     
     public static void main(final String[] args) throws IOException {
         testAll();
+        //test(AStarMazeSolver.class);
     }
     
 }

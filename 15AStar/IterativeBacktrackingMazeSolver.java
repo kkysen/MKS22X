@@ -101,6 +101,7 @@ public class IterativeBacktrackingMazeSolver extends MazeSolver {
             maze[y][x] = PATH;
             ij = ij.next(y, x);
         }
+        
         maze[startI][startJ] = START;
         return ij;
     }
