@@ -49,7 +49,7 @@ public abstract class FrontierMazeSolver extends AbstractMazeSolver {
         frontier.add(new IJ(startI, startJ, null), 0);
         for (int moveNum = 0; frontier.size() > 0; moveNum++) {
             if (localAnimate) {
-                System.out.println(frontier);
+                //System.out.println(frontier);
                 printAndPause();
                 System.out.println();
             }

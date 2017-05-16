@@ -61,11 +61,11 @@ public final class IJStack implements Frontier {
         final StringBuilder sb = new StringBuilder();
         sb.append('[');
         for (int i = 0;; i++) {
-            sb.append(a[i].toString());
             if (i == size) {
                 sb.append(']');
                 return sb.toString();
             }
+            sb.append(a[i].toString());
             sb.append(',');
             sb.append(' ');
         }

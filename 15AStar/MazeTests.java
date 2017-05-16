@@ -57,7 +57,7 @@ public class MazeTests {
     public static void main(final String[] args) throws IOException {
         //testAll();
         //test(AStarMazeSolver.class);
-        final MazeSolver solver = new MazeSolver("04MazeSolver/tests/maze.txt");
+        final MazeSolver solver = new MazeSolver("04MazeSolver/tests/maze.txt", true);
         solver.setPrint();
         for (int i = 0; i < 4; i++) {
             System.out.println(i);
