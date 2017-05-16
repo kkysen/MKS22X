@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="01Recursion"/>
-	<classpathentry kind="src" path="04MazeSolver"/>
 	<classpathentry kind="src" path="03KnightsTour"/>
 	<classpathentry kind="src" path="02NQueens"/>
 	<classpathentry kind="src" path="05USACO"/>

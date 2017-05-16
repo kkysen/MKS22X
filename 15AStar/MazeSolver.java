@@ -22,7 +22,7 @@ public class MazeSolver {
         this(file, false);
     }
     
-    private AbstractMazeSolver getSolver(final int style) throws IOException {
+    private Maze getSolver(final int style) throws IOException {
         switch (style) {
             case 0:
                 return new DepthFirstMazeSolver(file);
@@ -45,7 +45,7 @@ public class MazeSolver {
      *            3 - A*
      */
     public void solve(final int style) {
-        AbstractMazeSolver maze;
+        Maze maze;
         try {
             maze = getSolver(style);
         } catch (final IOException e) {

@@ -6,9 +6,7 @@ import java.nio.file.Path;
  * 
  * @author Khyber Sen
  */
-public abstract class FrontierMazeSolver extends AbstractMazeSolver {
-    
-    private static final char FRONTIER = '?';
+public abstract class FrontierMazeSolver extends Maze {
     
     private final Frontier frontier;
     

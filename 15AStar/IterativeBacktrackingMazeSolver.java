@@ -7,7 +7,7 @@ import java.nio.file.Paths;
  * 
  * @author Khyber Sen
  */
-public class IterativeBacktrackingMazeSolver extends AbstractMazeSolver {
+public class IterativeBacktrackingMazeSolver extends Maze {
     
     public IterativeBacktrackingMazeSolver(final char[][] maze) {
         super(maze);

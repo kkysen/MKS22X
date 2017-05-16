@@ -13,7 +13,7 @@ public class MazeTests {
     
     private MazeTests() {}
     
-    public static <M extends AbstractMazeSolver> void test(final Class<M> type, final Path dir,
+    public static <M extends Maze> void test(final Class<M> type, final Path dir,
             final Path file) throws IOException {
         Constructor<M> constructor;
         try {
@@ -21,7 +21,7 @@ public class MazeTests {
         } catch (NoSuchMethodException | SecurityException e) {
             throw new RuntimeException();
         }
-        AbstractMazeSolver maze;
+        Maze maze;
         try {
             maze = constructor.newInstance(dir.resolve(file));
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
@@ -40,7 +40,7 @@ public class MazeTests {
                 String.format("%1$31s" + ": " + time / 1e9 + " sec", type.getSimpleName()));
     }
     
-    public static void test(final Class<? extends AbstractMazeSolver> type) throws IOException {
+    public static void test(final Class<? extends Maze> type) throws IOException {
         test(type, Paths.get("04MazeSolver", "tests"), Paths.get("biggerMaze.dat"));
         System.out.println("waiting...");
         //System.in.read();
