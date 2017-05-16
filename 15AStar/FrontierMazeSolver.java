@@ -6,7 +6,9 @@ import java.nio.file.Path;
  * 
  * @author Khyber Sen
  */
-public abstract class FrontierMazeSolver extends MazeSolver {
+public abstract class FrontierMazeSolver extends AbstractMazeSolver {
+    
+    private static final char FRONTIER = '?';
     
     private final Frontier frontier;
     
@@ -24,13 +26,16 @@ public abstract class FrontierMazeSolver extends MazeSolver {
     
     private IJ explore(final Frontier frontier, final IJ ij, final int moveNum) {
         for (int move = 0; move < NUM_MOVES; move++) {
-            final int nextI = ij.i + I_MOVES[move];
-            final int nextJ = ij.j + J_MOVES[move];
+            final int i = ij.i;
+            final int j = ij.j;
+            maze[i][j] = VISITED;
+            final int nextI = i + I_MOVES[move];
+            final int nextJ = j + J_MOVES[move];
             final char next = maze[nextI][nextJ];
             final IJ nextIJ = ij.next(nextI, nextJ);
             if (next == EMPTY) {
                 frontier.add(nextIJ, moveNum);
-                maze[nextI][nextJ] = VISITED;
+                maze[nextI][nextJ] = FRONTIER;
             } else if (next == END) {
                 return nextIJ;
             }
@@ -62,7 +67,7 @@ public abstract class FrontierMazeSolver extends MazeSolver {
             return null;
         }
         final IJ end = solve(frontier);
-        for (IJ ij = end.prev; ij != null; ij = ij.prev) {
+        for (IJ ij = end.previous; ij != null; ij = ij.previous) {
             maze[ij.i][ij.j] = PATH;
         }
         maze[startI][startJ] = START;

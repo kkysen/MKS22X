@@ -7,12 +7,12 @@ public class IJ {
     
     public final int i;
     public final int j;
-    public final IJ prev;
+    public final IJ previous;
     
     public IJ(final int i, final int j, final IJ prev) {
         this.i = i;
         this.j = j;
-        this.prev = prev;
+        this.previous = prev;
     }
     
     public IJ next(final int i, final int j) {
