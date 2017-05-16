@@ -58,7 +58,8 @@ public class MazeTests {
         System.out.println("path: " + Paths.get("").toAbsolutePath());
         //testAll();
         //test(AStarMazeSolver.class);
-        final MazeSolver solver = new MazeSolver("04MazeSolver/tests/maze.txt", true);
+        final Path path = Paths.get("").getParent().resolve("04MazeSolver/tests/maze.txt");
+        final MazeSolver solver = new MazeSolver(path.toString(), true);
         solver.setPrint();
         for (int i = 0; i < 4; i++) {
             System.out.println(i);
