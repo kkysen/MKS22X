@@ -19,37 +19,6 @@ public abstract class Maze {
     private static final String HIDE_CURSOR = TERMINAL_CMD + "?25l";
     private static final String SHOW_CURSOR = TERMINAL_CMD + "?25h";
     
-    private static final Map<Character, String> SYMBOLS = new HashMap<>();
-    
-    public static String moveCommand(final int x, final int y) {
-        return TERMINAL_CMD + x + ";" + y + "H";
-    }
-    
-    public static String colorCommand(final int foreground, final int background) {
-        return TERMINAL_CMD + "0;" + foreground + ";" + background + "m";
-    }
-    
-    static {
-        SYMBOLS.put('#', colorCommand(37, 47));
-        SYMBOLS.put('S', colorCommand(37, 40));
-        SYMBOLS.put('E', colorCommand(37, 40));
-        SYMBOLS.put('@', colorCommand(36, 40));
-        SYMBOLS.put('?', colorCommand(36, 40));
-        SYMBOLS.put('.', colorCommand(32, 40));
-        SYMBOLS.put(' ', colorCommand(35, 40));
-        SYMBOLS.put('\n', colorCommand(37, 40));
-    }
-    
-    public static String colorize(final String s) {
-        final StringBuilder sb = new StringBuilder(s.length() * 2);
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            sb.append(SYMBOLS.get(c));
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-    
     protected static final char WALL = '#';
     protected static final char EMPTY = ' ';
     protected static final char START = 'S';
@@ -62,6 +31,37 @@ public abstract class Maze {
     protected static final int[] I_MOVES = {1, -1, 0, 0};
     protected static final int[] J_MOVES = {0, 0, 1, -1};
     // down, up, right, left in that order
+    
+    private static final Map<Character, String> SYMBOLS = new HashMap<>();
+    
+    public static String moveCommand(final int x, final int y) {
+        return TERMINAL_CMD + x + ";" + y + "H";
+    }
+    
+    public static String colorCommand(final int foreground, final int background) {
+        return TERMINAL_CMD + "0;" + foreground + ";" + background + "m";
+    }
+    
+    static {
+        SYMBOLS.put(WALL, colorCommand(37, 47));
+        SYMBOLS.put(START, colorCommand(37, 40));
+        SYMBOLS.put(END, colorCommand(37, 40));
+        SYMBOLS.put(PATH, colorCommand(36, 40));
+        SYMBOLS.put(FRONTIER, colorCommand(36, 40));
+        SYMBOLS.put(VISITED, colorCommand(32, 40));
+        SYMBOLS.put(EMPTY, colorCommand(35, 40));
+        SYMBOLS.put('\n', colorCommand(37, 40));
+    }
+    
+    public static String colorize(final String s) {
+        final StringBuilder sb = new StringBuilder(s.length() * 2);
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            sb.append(SYMBOLS.get(c));
+            sb.append(c);
+        }
+        return sb.toString();
+    }
     
     protected final int m;
     protected final int n;
@@ -250,6 +250,15 @@ public abstract class Maze {
         }
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
+    }
+    
+    public String toString(final long delay) {
+        try {
+            Thread.sleep(delay);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return HIDE_CURSOR + CLEAR_SCREEN + moveCommand(1, 1) + colorize(toString()) + SHOW_CURSOR;
     }
     
     public void save(final Path path) throws IOException {

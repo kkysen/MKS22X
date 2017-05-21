@@ -59,7 +59,7 @@ public class MazeTests {
         //testAll();
         //test(AStarMazeSolver.class);
         final Path path = Paths.get("").toAbsolutePath().getParent()
-                .resolve("04MazeSolver/tests/maze.txt");
+                .resolve("04MazeSolver/tests/maze2.dat");
         final MazeSolver solver = new MazeSolver(path.toString(), true);
         solver.setPrint();
         for (int i = 0; i < 4; i++) {
