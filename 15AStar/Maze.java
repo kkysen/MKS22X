@@ -56,7 +56,7 @@ public abstract class Maze {
     }
     
     public static String colorize(final String s) {
-        final StringBuilder sb = new StringBuilder(s.length() * 2);
+        final StringBuilder sb = new StringBuilder(s.length() * 11);
         for (int i = 0; i < s.length(); i++) {
             final char c = s.charAt(i);
             sb.append(SYMBOLS[c]);
