@@ -3,9 +3,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * supposed to be called AbstractMazeSolver
@@ -32,7 +30,7 @@ public abstract class Maze {
     protected static final int[] J_MOVES = {0, 0, 1, -1};
     // down, up, right, left in that order
     
-    private static final Map<Character, String> SYMBOLS = new HashMap<>();
+    private static final String[] SYMBOLS = new String[256];
     
     public static String moveCommand(final int x, final int y) {
         return TERMINAL_CMD + x + ";" + y + "H";
@@ -42,22 +40,26 @@ public abstract class Maze {
         return TERMINAL_CMD + "0;" + foreground + ";" + background + "m";
     }
     
+    public static String colorCommand(final int foreground) {
+        return colorCommand(foreground, 40);
+    }
+    
     static {
-        SYMBOLS.put(WALL, colorCommand(37, 47));
-        SYMBOLS.put(START, colorCommand(37, 40));
-        SYMBOLS.put(END, colorCommand(37, 40));
-        SYMBOLS.put(PATH, colorCommand(36, 40));
-        SYMBOLS.put(FRONTIER, colorCommand(36, 40));
-        SYMBOLS.put(VISITED, colorCommand(32, 40));
-        SYMBOLS.put(EMPTY, colorCommand(35, 40));
-        SYMBOLS.put('\n', colorCommand(37, 40));
+        SYMBOLS[WALL] = colorCommand(37);
+        SYMBOLS[START] = colorCommand(37);
+        SYMBOLS[END] = colorCommand(37);
+        SYMBOLS[PATH] = colorCommand(36);
+        SYMBOLS[FRONTIER] = colorCommand(36);
+        SYMBOLS[VISITED] = colorCommand(32);
+        SYMBOLS[EMPTY] = colorCommand(35);
+        SYMBOLS['\n'] = colorCommand(37);
     }
     
     public static String colorize(final String s) {
         final StringBuilder sb = new StringBuilder(s.length() * 2);
         for (int i = 0; i < s.length(); i++) {
             final char c = s.charAt(i);
-            sb.append(SYMBOLS.get(c));
+            sb.append(SYMBOLS[c]);
             sb.append(c);
         }
         return sb.toString();
@@ -79,7 +81,7 @@ public abstract class Maze {
     protected boolean unsolveable;
     
     protected boolean animate;
-    private long pause = 20; // pause length in milliseconds
+    protected long pause = 60; // pause length in milliseconds
     
     private void checkNoMaze(final int dimension) {
         if (dimension == 0) {
@@ -221,12 +223,6 @@ public abstract class Maze {
     
     private void pause() {
         clearTerminal();
-        //        try {
-        //            System.in.read();
-        //        } catch (final IOException e) {
-        //            // TODO Auto-generated catch block
-        //            e.printStackTrace();
-        //        }
         try {
             Thread.sleep(pause);
         } catch (final InterruptedException e) {

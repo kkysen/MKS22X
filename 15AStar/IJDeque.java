@@ -31,15 +31,16 @@ public final class IJDeque implements Frontier {
         mask = capacity - 1;
     }
     
-    private final IJ[] copyElements(final IJ[] a) {
+    private final IJ[] copyElements(final IJ[] dest) {
+        final IJ[] src = a;
         if (first < last) {
-            System.arraycopy(a, first, a, 0, size());
+            System.arraycopy(src, first, dest, 0, size());
         } else {
-            final int rightLength = a.length - first;
-            System.arraycopy(a, first, a, 0, rightLength);
-            System.arraycopy(a, 0, a, rightLength, last);
+            final int rightLength = src.length - first;
+            System.arraycopy(src, first, dest, 0, rightLength);
+            System.arraycopy(src, 0, dest, rightLength, last);
         }
-        return a;
+        return dest;
     }
     
     private final void reallocateElements(final int newCapacity, final int size) {
@@ -107,7 +108,7 @@ public final class IJDeque implements Frontier {
     }
     
     @Override
-    public void add(final IJ ij, final int distance) {
+    public void add(final IJ ij) {
         addLast(ij);
     }
     

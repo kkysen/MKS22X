@@ -22,7 +22,7 @@ public abstract class FrontierMazeSolver extends Maze {
     
     protected abstract Frontier getFrontier();
     
-    private IJ explore(final Frontier frontier, final IJ ij, final int moveNum) {
+    private IJ explore(final Frontier frontier, final IJ ij) {
         for (int move = 0; move < NUM_MOVES; move++) {
             final int i = ij.i;
             final int j = ij.j;
@@ -32,7 +32,7 @@ public abstract class FrontierMazeSolver extends Maze {
             final char next = maze[nextI][nextJ];
             final IJ nextIJ = ij.next(nextI, nextJ);
             if (next == EMPTY) {
-                frontier.add(nextIJ, moveNum);
+                frontier.add(nextIJ);
                 maze[nextI][nextJ] = FRONTIER;
             } else if (next == END) {
                 return nextIJ;
@@ -44,14 +44,13 @@ public abstract class FrontierMazeSolver extends Maze {
     private IJ solve(final Frontier frontier) {
         final boolean localAnimate = animate;
         frontier.clear();
-        frontier.add(new IJ(startI, startJ, null), 0);
-        for (int moveNum = 0; frontier.size() > 0; moveNum++) {
+        frontier.add(new IJ(startI, startJ, null, 0));
+        while (frontier.size() > 0) {
             if (localAnimate) {
-                //System.out.println(frontier);
-                printAndPause();
-                System.out.println();
+                System.out.println(toString(pause));
+                System.out.println(frontier);
             }
-            final IJ end = explore(frontier, frontier.remove(), moveNum);
+            final IJ end = explore(frontier, frontier.remove());
             if (end != null) {
                 return end;
             }

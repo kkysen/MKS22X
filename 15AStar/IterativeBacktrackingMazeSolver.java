@@ -94,7 +94,7 @@ public class IterativeBacktrackingMazeSolver extends Maze {
         }
         
         // fill in final path taken
-        IJ ij = new IJ(startI, startJ, null);
+        IJ ij = new IJ(startI, startJ, null, 0);
         for (int c = 0; c < moveNum; c++) {
             final int y = iStack[c];
             final int x = jStack[c];

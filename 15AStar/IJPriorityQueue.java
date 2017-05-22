@@ -67,8 +67,8 @@ public final class IJPriorityQueue implements Frontier {
     }
     
     @Override
-    public void add(final IJ ij, final int distance) {
-        queue.add(new IJCmp(ij, heuristic.cost(distance, ij.i, ij.j, endI, endJ)));
+    public void add(final IJ ij) {
+        queue.add(new IJCmp(ij, heuristic.cost(ij.i, ij.j, ij.distance, endI, endJ)));
     }
     
     @Override

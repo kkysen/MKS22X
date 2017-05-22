@@ -42,7 +42,7 @@ public final class IJStack implements Frontier {
     }
     
     @Override
-    public void add(final IJ ij, final int distance) {
+    public void add(final IJ ij) {
         push(ij);
     }
     

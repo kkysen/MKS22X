@@ -59,10 +59,10 @@ public class MazeTests {
         //testAll();
         //test(AStarMazeSolver.class);
         final Path path = Paths.get("").toAbsolutePath().getParent()
-                .resolve("04MazeSolver/tests/maze2.dat");
+                .resolve("04MazeSolver/tests/maze4.dat");
         final MazeSolver solver = new MazeSolver(path.toString(), true);
         solver.setPrint();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i <= 3; i++) {
             System.out.println(i);
             solver.solve(i);
         }

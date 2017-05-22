@@ -11,7 +11,7 @@ public interface Frontier {
     
     public void clear();
     
-    public void add(IJ ij, int distance);
+    public void add(IJ ij);
     
     public IJ remove();
     
