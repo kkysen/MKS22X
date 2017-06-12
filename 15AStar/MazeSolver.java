@@ -13,6 +13,8 @@ public class MazeSolver {
     private final boolean animate;
     private boolean print;
     
+    private Maze maze;
+    
     public MazeSolver(final String file, final boolean animate) {
         this.file = Paths.get(file);
         this.animate = animate;
@@ -45,7 +47,6 @@ public class MazeSolver {
      *            3 - A*
      */
     public void solve(final int style) {
-        Maze maze;
         try {
             maze = getSolver(style);
         } catch (final IOException e) {
@@ -68,6 +69,35 @@ public class MazeSolver {
     
     public void setPrint() {
         print = true;
+    }
+    
+    private void setDefaultMaze() {
+        if (maze == null) {
+            try {
+                maze = getSolver(3);
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    @Override
+    public String toString() {
+        setDefaultMaze();
+        return maze.toString();
+    }
+    
+    public String toString(final int delay) {
+        setDefaultMaze();
+        return maze.toString(delay);
+    }
+    
+    public static void main(final String[] args) {
+        final MazeSolver solver = new MazeSolver("04MazeSolver/tests/maze4.dat");
+        System.out.println(solver);
+        solver.solve(1);
+        final String answer = solver.toString();
+        System.out.println(answer);
     }
     
 }
